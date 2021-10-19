@@ -1,13 +1,19 @@
 # Docs for the Azure Web Apps Deploy action: https://github.com/Azure/webapps-deploy
 # More GitHub Actions for Azure: https://github.com/Azure/actions
 
-name: Build and deploy ASP.Net Core app to Azure Web App - dmsgroup2
+name: Build and deploy ASP.Net app to Azure Web App - dmsgroup2
 
 on:
   push:
     branches:
       - testdeploy
   workflow_dispatch:
+
+env:
+  AZURE_WEBAPP_NAME: dmsgroup2fr    # set this to your application's name
+  AZURE_WEBAPP_PACKAGE_PATH: 'build'      # set this to the path to your web app project, defaults to the repository root
+  DOTNET_VERSION: '5.0.x'   
+  SRC_PATH: 'src/dms-backend-api'
 
 jobs:
   build:
@@ -19,16 +25,16 @@ jobs:
     - name: Set up .NET
       uses: actions/setup-dotnet@v1
       with:
-        dotnet-version: '6.0.x'
+        dotnet-version: ${{ env.DOTNET_VERSION }}
         include-prerelease: true
 
     - name: Install dependencies
       run: dotnet restore
-      working-directory: src/dms-backend-api
+      working-directory: ${{ env.SRC_PATH }}
   
     - name: Build with dotnet
       run: dotnet build --configuration Release
-      working-directory: src/dms-backend-api
+      working-directory: ${{ env.SRC_PATH }}
 
     - name: dotnet publish
       run: dotnet publish -c Release -o ${{env.DOTNET_ROOT}}/myapp
