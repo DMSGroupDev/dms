@@ -1,23 +1,26 @@
 ﻿
-using AutoMapper;
 using AutoMapper.Data;
 using dms_backend_api.Mapping;
+using Microsoft.Extensions.DependencyInjection;
 
-namespace dms_backend_api.Infrastracture;
-
-public class DependencyRegistrar : IDependencyRegistrar
+namespace dms_backend_api.Infrastracture
 {
-    public void Register(IServiceCollection services)
+
+    public class DependencyRegistrar : IDependencyRegistrar
     {
-        /*Mapping*/
-        services.AddAutoMapper(mc =>
+        public void Register(IServiceCollection services)
         {
-            mc.AddDataReaderMapping();
-            mc.AddProfile(new MappingProfile());
-        });
+            /*Mapping*/
+            services.AddAutoMapper(mc =>
+            {
+                mc.AddDataReaderMapping();
+                mc.AddProfile(new MappingProfile());
+            });
 
-        /*Validator*/
 
-        /*Services*/
+            /*Validator*/
+
+            /*Services*/
+        }
     }
 }
