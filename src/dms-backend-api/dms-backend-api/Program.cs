@@ -1,66 +1,40 @@
 using Azure.Extensions.AspNetCore.Configuration.Secrets;
 using Azure.Identity;
 using Azure.Security.KeyVault.Secrets;
-using dms_backend_api.Infrastracture;
-using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.Identity.Web;
-using FluentValidation.AspNetCore;
-using dms_backend_api.Validators.Filters;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Hosting;
 using Serilog;
+using System;
 
-var builder = WebApplication.CreateBuilder(args);
-
-builder.WebHost.UseSerilog();
-
-// Specifying the configuration for serilog
-Log.Logger = new LoggerConfiguration() // initiate the logger configuration
-                .ReadFrom.Configuration(builder.Configuration) // connect serilog to our configuration folder
-                .Enrich.FromLogContext() //Adds more information to our logs from built in Serilog 
-                .WriteTo.Console()
-                .CreateLogger(); //initialise the logger
-
-Log.Logger.Information("Application Starting");
-
-builder.Services.AddControllers();
-
-new DependencyRegistrar().Register(builder.Services);
-
-var config = builder.Configuration;
-
-string? keyVaultEndpoint = Environment.GetEnvironmentVariable("KEYVAULT_ENDPOINT");
-
-if (keyVaultEndpoint is null)
-    throw new InvalidOperationException("Store the Key Vault endpoint in a KEYVAULT_ENDPOINT environment variable.");
-/*
-    builder.Configuration.AddAzureKeyVault(new SecretClient(new Uri(keyVaultEndpoint),
-        new ClientSecretCredential((string)config["AzureKeyVault:TenantId"], (string)config["AzureKeyVault:ClientId"], (string)config["AzureKeyVault:ClientSecretId"])),
-        new KeyVaultSecretManager());
-*/
-builder.Services.AddMvc(x => x.Filters.Add(new ValidationFilter())).AddFluentValidation();
-
-builder.Services.AddSwaggerGen(c =>
+namespace dms_backend_api
 {
-    c.SwaggerDoc("v1", new() { Title = "dms_backend_api", Version = "v1" });
-});
+    public class Program
+    {
+        public static void Main(string[] args)
+        {
+            CreateHostBuilder(args).Build().Run();
+        }
 
-var app = builder.Build();
+        public static IHostBuilder CreateHostBuilder(string[] args) =>
+            Host.CreateDefaultBuilder(args)
+                .ConfigureAppConfiguration((context, config) =>
+                {
+                    string? keyVaultEndpoint = Environment.GetEnvironmentVariable("KEYVAULT_ENDPOINT");
 
+                    if (keyVaultEndpoint is null)
+                        throw new InvalidOperationException("Store the Key Vault endpoint in a KEYVAULT_ENDPOINT environment variable.");
 
-// Configure the HTTP request pipeline.
-if (builder.Environment.IsDevelopment())
-{
-    app.UseDeveloperExceptionPage();
-    app.UseSwagger();
-    app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "dms_backend_api v1"));
+                    var root = config.Build();
+
+                    config.AddAzureKeyVault(new SecretClient(new Uri(keyVaultEndpoint),
+                        new ClientSecretCredential((string)root["AzureKeyVault:TenantId"], (string)root["AzureKeyVault:ClientId"], (string)root["AzureKeyVault:ClientSecretId"])),
+                        new KeyVaultSecretManager());
+                })
+                .UseSerilog()
+                .ConfigureWebHostDefaults(webBuilder =>
+                {
+                    webBuilder.UseStartup<Startup>();
+                });
+    }
 }
-
-
-app.UseHttpsRedirection();
-
-app.UseAuthentication();
-app.UseAuthorization();
-
-app.MapControllers();
-
-app.Run();

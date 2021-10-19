@@ -1,7 +1,10 @@
 ﻿
-namespace dms_backend_api.Infrastracture;
+using Microsoft.Extensions.DependencyInjection;
 
-public interface IDependencyRegistrar
+namespace dms_backend_api.Infrastracture
 {
-    void Register(IServiceCollection services);
+    public interface IDependencyRegistrar
+    {
+        void Register(IServiceCollection services);
+    }
 }
