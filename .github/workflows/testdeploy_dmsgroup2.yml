@@ -10,7 +10,7 @@ on:
   workflow_dispatch:
 
 env:
-  AZURE_WEBAPP_NAME: dmsgroup2fr    # set this to your application's name
+  AZURE_WEBAPP_NAME: dmsgroup2    # set this to your application's name
   AZURE_WEBAPP_PACKAGE_PATH: 'build'      # set this to the path to your web app project, defaults to the repository root
   DOTNET_VERSION: '5.0.x'   
   SRC_PATH: 'src/dms-backend-api'
@@ -44,11 +44,11 @@ jobs:
       run: dotnet publish -c Release -o ${{env.DOTNET_ROOT}}
       working-directory: ${{ env.SRC_PATH }}
 
-    - name: Upload artifact for deployment job
-      uses: actions/upload-artifact@v2
-      with:
-        name: .net-app
-        path: ${{env.DOTNET_ROOT}}
+#    - name: Upload artifact for deployment job
+#      uses: actions/upload-artifact@v2
+#      with:
+#        name: .net-app
+#        path: ${{env.DOTNET_ROOT}}
 
   deploy:
     runs-on: ubuntu-latest
@@ -58,10 +58,10 @@ jobs:
       url: ${{ steps.deploy-to-webapp.outputs.webapp-url }}
 
     steps:
-    - name: Download artifact from build job
-      uses: actions/download-artifact@v2
-      with:
-        name: .net-app
+ #   - name: Download artifact from build job
+ #     uses: actions/download-artifact@v2
+ #     with:
+ #       name: .net-app
 
     - name: Deploy to Azure Web App
       id: deploy-to-webapp
