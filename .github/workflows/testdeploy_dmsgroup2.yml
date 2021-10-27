@@ -11,7 +11,8 @@ on:
 
 env:
   AZURE_WEBAPP_NAME: dmsgroup2    # set this to your application's name
-  AZURE_WEBAPP_PACKAGE_PATH: 'build'      # set this to the path to your web app project, defaults to the repository root
+  #AZURE_WEBAPP_PACKAGE_PATH: 'build'      # set this to the path to your web app project, defaults to the repository root
+  AZURE_WEBAPP_PACKAGE_PATH: 'src'      # set this to the path to your web app project, defaults to the repository root
   DOTNET_VERSION: '5.0.x'   
   SRC_PATH: 'src/dms-backend-api'
 
@@ -41,7 +42,7 @@ jobs:
       working-directory: ${{ env.SRC_PATH }}
 
     - name: dotnet publish
-      run: dotnet publish -c Release -o ${{env.DOTNET_ROOT}}
+      run: dotnet publish -c Release -o src/dotnet-webapp -r linux-x64 --self-contained true /p:UseAppHost=true
       working-directory: ${{ env.SRC_PATH }}
 
 #    - name: Upload artifact for deployment job
