@@ -74,4 +74,4 @@ jobs:
         app-name: '${{ env.AZURE_WEBAPP_NAME }}'
         slot-name: 'production'
         publish-profile: ${{ secrets.AzureAppService_PublishProfile_d619acb065f94331b25ec8a8834d105a }}
-        package: '${{ env.AZURE_WEBAPP_PACKAGE_PATH }}/myapp' 
+        package: '${{ env.SRC_PATH }}/${{ env.AZURE_WEBAPP_PACKAGE_PATH }}/myapp' 
