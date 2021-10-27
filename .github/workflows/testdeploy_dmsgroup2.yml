@@ -67,11 +67,11 @@ jobs:
     - name: List dir
       run: du -a
 
-#    - name: Deploy to Azure Web App
-#      id: deploy-to-webapp
-#      uses: azure/webapps-deploy@v2
-#      with:
-#        app-name: '${{ env.AZURE_WEBAPP_NAME }}'
-#        slot-name: 'production'
-#        publish-profile: ${{ secrets.AzureAppService_PublishProfile_d619acb065f94331b25ec8a8834d105a }}
-#        package: ${{ env.AZURE_WEBAPP_PACKAGE_PATH }}/deploy
+    - name: Deploy to Azure Web App
+      id: deploy-to-webapp
+      uses: azure/webapps-deploy@v2
+      with:
+        app-name: '${{ env.AZURE_WEBAPP_NAME }}'
+        slot-name: 'production'
+        publish-profile: ${{ secrets.AzureAppService_PublishProfile_d619acb065f94331b25ec8a8834d105a }}
+        package: ${{ env.AZURE_WEBAPP_PACKAGE_PATH }}/deploy
