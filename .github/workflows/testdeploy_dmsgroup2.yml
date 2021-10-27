@@ -13,7 +13,7 @@ env:
   AZURE_WEBAPP_NAME: dmsgroup2    # set this to your application's name
   #AZURE_WEBAPP_PACKAGE_PATH: 'build'      # set this to the path to your web app project, defaults to the repository root
   AZURE_WEBAPP_PACKAGE_PATH: 'src'      # set this to the path to your web app project, defaults to the repository root
-  DOTNET_VERSION: '5.0.6'   
+  DOTNET_VERSION: '5.0.x'   
   SRC_PATH: 'src/dms-backend-api'
 
 jobs:
