@@ -42,7 +42,7 @@ jobs:
       working-directory: ${{ env.SRC_PATH }}
 
     - name: dotnet publish
-      run: dotnet publish -c Release -o '${{ env.AZURE_WEBAPP_PACKAGE_PATH }}/myapp'  
+      run: dotnet publish dms-backend-api -c Release -o '${{ env.AZURE_WEBAPP_PACKAGE_PATH }}/myapp'  
       working-directory: ${{ env.SRC_PATH }}
 
 #    - name: Upload artifact for deployment job
