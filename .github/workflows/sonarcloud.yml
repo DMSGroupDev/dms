@@ -6,7 +6,7 @@ on:
   pull_request:
     types: [opened, synchronize, reopened]
 env:
-  SRC_PATH: "src/dms-backend-api/dms-backend-api"
+  SRC_PATH: "./src/dms-backend-api/dms-backend-api"
   SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   
