@@ -43,7 +43,6 @@ jobs:
         shell: powershell
         run: |
           .\.sonar\scanner\dotnet-sonarscanner begin /k:"DMSGroupDev_dms" /o:"dmsgroupdev" /d:sonar.login="${{ secrets.SONAR_TOKEN }}" /d:sonar.host.url="https://sonarcloud.io"
-          cd src/dms-backend-api/
+          Get-Location
           dotnet build --configuration Release
-          cd ../../
           .\.sonar\scanner\dotnet-sonarscanner end /d:sonar.login="${{ secrets.SONAR_TOKEN }}"
