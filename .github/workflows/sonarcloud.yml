@@ -1,0 +1,39 @@
+name: Build
+on:
+  push:
+    branches:
+      - testdeploy
+  pull_request:
+    types: [opened, synchronize, reopened]
+env:
+  SRC_PATH: "./src/dms-backend-api"
+  SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+      #with:
+      #  fetch-depth: '0'
+      
+    - name: SonarScanner for .NET 5 with pull request decoration support
+      uses: highbyte/sonarscan-dotnet@2.0
+      with:
+        # The key of the SonarQube project
+        sonarProjectKey: "DMSGroupDev_dms"
+        # The name of the SonarQube project
+        sonarProjectName: "dms"
+        # The name of the SonarQube organization in SonarCloud. For hosted SonarQube, skip this setting.
+        sonarOrganization: "dmsgroupdev"
+        # Optional command arguments to dotnet build
+        dotnetBuildArguments: ${{env.SRC_PATH }}/dms-backend-api
+        # Optional command arguments to dotnet test
+        dotnetTestArguments: ${{ env.SRC_PATH }}/dms-backend-api.Tests --logger trx --collect:"XPlat Code Coverage" -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=opencover
+        # Optional extra command arguments the the SonarScanner 'begin' command
+        sonarBeginArguments: /d:sonar.cs.opencover.reportsPaths="**/TestResults/**/coverage.opencover.xml" -d:sonar.cs.vstest.reportsPaths="**/TestResults/*.trx"
+        
+        
+        
