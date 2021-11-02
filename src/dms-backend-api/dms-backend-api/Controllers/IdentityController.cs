@@ -56,6 +56,7 @@ namespace dms_backend_api.Controllers
 
         #region Roles
 
+        [HttpGet]
         public string Echo()
         {
             return "Echo";
