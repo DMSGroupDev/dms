@@ -6,7 +6,7 @@ using System;
 
 namespace dms_backend_api.Data
 {
-    public class ApplicationDbContext : IdentityDbContext<ApplicationUser, ApplicationRole, Guid>
+    public partial class ApplicationDbContext : IdentityDbContext<ApplicationUser, ApplicationRole, Guid>
     {
 
         public ApplicationDbContext(DbContextOptions options)

@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace dms_backend_api.Validators.Filters
 {
-    public class ValidationFilter : IAsyncActionFilter
+    public partial class ValidationFilter : IAsyncActionFilter
     {
 
         public async Task OnActionExecutionAsync(ActionExecutingContext context, ActionExecutionDelegate next)

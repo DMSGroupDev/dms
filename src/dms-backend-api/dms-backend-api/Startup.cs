@@ -1,38 +1,30 @@
-using Azure.Extensions.AspNetCore.Configuration.Secrets;
-using Azure.Identity;
-using Azure.Security.KeyVault.Secrets;
 using dms_backend_api.Data;
 using dms_backend_api.Domain.Identity;
 using dms_backend_api.Helpers;
 using dms_backend_api.Infrastracture;
-using dms_backend_api.Validators.Filters;
-using FluentValidation.AspNetCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.HttpsPolicy;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
 using Serilog;
 using Serilog.Events;
 using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 
 namespace dms_backend_api
 {
-    public class Startup
+    public partial class Startup
     {
+
+        public static IConfiguration? _configuration;
+
         public Startup(IConfiguration configuration)
         {
-            Configuration = configuration;
+            _configuration = Configuration = configuration;
             ConnProp = PostgresHelper.TransferPostgreUrlToConnection((string)Configuration.GetValue(typeof(string), "postgresqlURL"));
         }
 
@@ -42,20 +34,20 @@ namespace dms_backend_api
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-            new DependencyRegistrar().Register(services);
+#pragma warning disable CS8604 // Possible null reference argument.
+            new DependencyRegistrar().Register(services, _configuration);
+#pragma warning restore CS8604 // Possible null reference argument.
 
             services.AddEntityFrameworkNpgsql().AddDbContext<ApplicationDbContext>(options => { options.UseNpgsql($"User ID={ConnProp.User};Password={ConnProp.Password};Host={ConnProp.Hostname};Port={ConnProp.Port};Database={ConnProp.DatabaseName}"); });
 
             services.AddIdentity<ApplicationUser, ApplicationRole>(options => options.SignIn.RequireConfirmedAccount = true)
                 .AddEntityFrameworkStores<ApplicationDbContext>();
 
-            services.AddMvc(x => x.Filters.Add(new ValidationFilter())).AddFluentValidation();
 
             services.AddSwaggerGen(c =>
             {
                 c.SwaggerDoc("v1", new() { Title = "dms_backend_api", Version = "v1" });
             });
-
 
             // Adding Authentication  
             services.AddAuthentication(options =>
@@ -73,9 +65,9 @@ namespace dms_backend_api
                 {
                     ValidateIssuer = true,
                     ValidateAudience = true,
-                    ValidAudience = Configuration["JWT:ValidAudience"],
-                    ValidIssuer = Configuration["JWT:ValidIssuer"],
-                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(Configuration["JWT:Secret"]))
+                    ValidAudience = Environment.GetEnvironmentVariable("JWT_ValidAudience") ?? (string)_configuration.GetValue(typeof(string), "JWT_ValidAudience"),
+                    ValidIssuer = Environment.GetEnvironmentVariable("JWT_ValidIssuer") ?? (string)_configuration.GetValue(typeof(string), "JWT_ValidIssuer"),
+                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(Environment.GetEnvironmentVariable("JWT_Secret") ?? (string)_configuration.GetValue(typeof(string), "JWT_Secret")))
                 };
             });
             services.AddControllers();
@@ -110,6 +102,7 @@ namespace dms_backend_api
 
             app.UseRouting();
 
+            app.UseAuthentication();
             app.UseAuthorization();
 
             app.UseEndpoints(endpoints =>

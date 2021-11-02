@@ -4,7 +4,7 @@ using System;
 
 namespace dms_backend_api.Domain.Identity
 {
-    public class ApplicationRole : IdentityRole<Guid>
+    public partial class ApplicationRole : IdentityRole<Guid>
     {
     }
 }
