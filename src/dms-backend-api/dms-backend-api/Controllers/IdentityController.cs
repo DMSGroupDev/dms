@@ -55,6 +55,12 @@ namespace dms_backend_api.Controllers
         #region Methods
 
         #region Roles
+
+        public string Echo()
+        {
+            return "Echo";
+        }
+
         [HttpPost]
         public async Task<IActionResult> AddRole([FromBody] AddRoleModelDTO addRoleModel)
         {
