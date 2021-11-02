@@ -1,5 +1,6 @@
 ﻿
 using dms_backend_api.Domain.Identity;
+using dms_backend_api.Services.Identity;
 using Microsoft.AspNetCore.Identity;
 
 namespace dms_backend_api.Services
@@ -11,6 +12,7 @@ namespace dms_backend_api.Services
         private readonly RoleManager<ApplicationRole> _roleManager;
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly SignInManager<ApplicationUser> _signInManager;
+       
         #endregion
 
         #region Ctor

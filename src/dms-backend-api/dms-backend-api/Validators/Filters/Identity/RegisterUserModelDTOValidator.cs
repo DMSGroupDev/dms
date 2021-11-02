@@ -4,9 +4,9 @@ using FluentValidation;
 
 namespace dms_backend_api.Validators.Filters.Identity
 {
-    public partial class RegisterUserModelValidator : AbstractValidator<RegisterUserModel>
+    public partial class RegisterUserModelDTOValidator : AbstractValidator<RegisterUserModelDTO>
     {
-        public RegisterUserModelValidator()
+        public RegisterUserModelDTOValidator()
         {
             RuleFor(x => x.Email).NotEmpty().EmailAddress();
             RuleFor(x => x.FirstName).NotEmpty();

@@ -27,9 +27,11 @@ namespace dms_backend_api
 
                     var root = config.Build();
 
+                    config.AddEnvironmentVariables();
                     config.AddAzureKeyVault(new SecretClient(new Uri(keyVaultEndpoint),
                         new ClientSecretCredential((string)root["AzureKeyVault:TenantId"], (string)root["AzureKeyVault:ClientId"], (string)root["AzureKeyVault:ClientSecretId"])),
                         new KeyVaultSecretManager());
+
                 })
                 .UseSerilog()
                 .ConfigureWebHostDefaults(webBuilder =>
