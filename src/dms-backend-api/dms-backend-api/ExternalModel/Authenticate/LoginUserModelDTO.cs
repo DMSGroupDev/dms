@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace dms_backend_api.ExternalModel.Identity
+namespace dms_backend_api.ExternalModel.Authenticate
 {
     public partial class LoginUserModelDTO
     {
