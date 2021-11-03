@@ -1,6 +1,6 @@
 ﻿using AutoMapper;
 using dms_backend_api.Domain.Identity;
-using dms_backend_api.ExternalModel.Identity;
+using dms_backend_api.ExternalModel.Authenticate;
 using dms_backend_api.Response;
 using dms_backend_api.Response.Identity;
 using dms_backend_api.Services.Identity;
@@ -11,6 +11,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.Logging;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Text;
@@ -58,6 +59,37 @@ namespace dms_backend_api.Controllers
         #region Methods
         [HttpPost]
         [AllowAnonymous]
+        public async Task<IActionResult> UserValidation([FromBody] UserValidationModelDTO userValidationModel)
+        {
+            try
+            {
+                if (ModelState.IsValid)
+                {
+                    var emailAlreadyExists = (await _userManager.FindByEmailAsync(userValidationModel.Email));
+                    var userNameAlreadyExists = await _userManager.FindByNameAsync(userValidationModel.UserName);
+
+                    if (emailAlreadyExists != null)
+                        ModelState.AddModelError(string.Empty, "Email is already used.");
+
+                    if (userNameAlreadyExists != null)
+                        ModelState.AddModelError(string.Empty, "UserName is already used.");
+                    if (ModelState.ErrorCount > 0)
+                    {
+                        return BadRequest(new BasicResponse() { Message = $"{string.Join(Environment.NewLine, ModelState)}", StatusCode = (int)HttpStatusCode.BadRequest });
+                    }
+                    return Ok(new BasicResponse() { Message = $"Combination is valid", StatusCode = (int)HttpStatusCode.OK });
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"UserValidation: {ex.Message}");
+                return BadRequest(new BasicResponse() { Message = $"{ex.Message}", StatusCode = (int)HttpStatusCode.BadRequest });
+            }
+            return BadRequest(new BasicResponse() { Message = $"{string.Join(Environment.NewLine, ModelState)}", StatusCode = (int)HttpStatusCode.ExpectationFailed });
+        }
+
+        [HttpPost]
+        [AllowAnonymous]
         public async Task<IActionResult> RegisterAsync([FromBody] RegisterUserModelDTO registerUserModel)
         {
             try
@@ -86,7 +118,7 @@ namespace dms_backend_api.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError($"{ex.Message}");
+                _logger.LogError($"RegisterAsync: {ex.Message}");
                 return BadRequest(new BasicResponse() { Message = $"{ex.Message}", StatusCode = (int)HttpStatusCode.BadRequest });
             }
             return BadRequest(new BasicResponse() { Message = $"{string.Join(Environment.NewLine, ModelState)}", StatusCode = (int)HttpStatusCode.ExpectationFailed });
@@ -131,7 +163,7 @@ namespace dms_backend_api.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError($"{ex.Message}");
+                _logger.LogError($"Login: {ex.Message}");
                 return BadRequest(new LoginResponse() { Message = $"{ex.Message}", StatusCode = (int)HttpStatusCode.BadRequest });
             }
             return BadRequest(new LoginResponse() { Message = $"{string.Join(Environment.NewLine, ModelState)}", StatusCode = (int)HttpStatusCode.ExpectationFailed });
@@ -148,7 +180,7 @@ namespace dms_backend_api.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError($"{ex.Message}");
+                _logger.LogError($"Logout: {ex.Message}");
                 return BadRequest(new LoginResponse() { Message = $"{ex.Message}", StatusCode = (int)HttpStatusCode.BadRequest });
             }
         }

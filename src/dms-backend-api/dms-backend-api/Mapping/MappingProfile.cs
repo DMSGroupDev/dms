@@ -1,6 +1,7 @@
 ﻿
 using AutoMapper;
 using dms_backend_api.Domain.Identity;
+using dms_backend_api.ExternalModel.Authenticate;
 using dms_backend_api.ExternalModel.Identity;
 
 namespace dms_backend_api.Mapping
@@ -13,7 +14,7 @@ namespace dms_backend_api.Mapping
         public MappingProfile()
         {
             CreateMap<RegisterUserModelDTO, ApplicationUser>();
-            CreateMap<RegisterUserModelDTO, ApplicationUser>();
+            CreateMap<AddRoleModelDTO, ApplicationRole>();
         }
     }
 }

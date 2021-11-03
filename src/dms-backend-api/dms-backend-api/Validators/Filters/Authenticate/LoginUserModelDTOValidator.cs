@@ -1,4 +1,5 @@
 ﻿
+using dms_backend_api.ExternalModel.Authenticate;
 using dms_backend_api.ExternalModel.Identity;
 using FluentValidation;
 

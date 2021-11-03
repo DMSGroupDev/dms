@@ -66,7 +66,7 @@ namespace dms_backend_api.Services.Utils
             }
             catch (Exception ex)
             {
-                _logger.LogError($"{ex.Message}");
+                _logger.LogError($"SendEmailSendgrid: {ex.Message}");
                 return null;
             }
             #endregion
