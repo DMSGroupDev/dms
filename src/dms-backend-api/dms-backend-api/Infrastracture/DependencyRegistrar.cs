@@ -27,7 +27,7 @@ namespace dms_backend_api.Infrastracture
             });
 
             /*Utils*/
-            services.AddSendGrid(options => { options.ApiKey = Environment.GetEnvironmentVariable("SENDGRID_API_KEY") ?? configuration["SendGrid:ApiKey"]; });
+            services.AddSendGrid(options => { options.ApiKey = configuration["SendGrid:ApiKey"]; });
             services.AddHttpContextAccessor();
 
             /*Validator*/

@@ -8,6 +8,8 @@ namespace dms_backend_api.ExternalModel.Authenticate
 
         public string RegistrationCallbackUrl { get; set; } = null!;
         [Required]
+        public string UserName { get; set; } = null!;
+        [Required]
         public string FirstName { get; set; } = null!;
         [Required]
         public string LastName { get; set; } = null!;

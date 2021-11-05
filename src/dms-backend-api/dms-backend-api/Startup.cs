@@ -65,9 +65,9 @@ namespace dms_backend_api
                 {
                     ValidateIssuer = true,
                     ValidateAudience = true,
-                    ValidAudience = Environment.GetEnvironmentVariable("JWT_ValidAudience") ?? (string)_configuration.GetValue(typeof(string), "JWT_ValidAudience"),
-                    ValidIssuer = Environment.GetEnvironmentVariable("JWT_ValidIssuer") ?? (string)_configuration.GetValue(typeof(string), "JWT_ValidIssuer"),
-                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(Environment.GetEnvironmentVariable("JWT_Secret") ?? (string)_configuration.GetValue(typeof(string), "JWT_Secret")))
+                    ValidAudience = (string)_configuration.GetValue(typeof(string), "JWT_ValidAudience"),
+                    ValidIssuer = (string)_configuration.GetValue(typeof(string), "JWT_ValidIssuer"),
+                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes((string)_configuration.GetValue(typeof(string), "JWT_Secret")))
                 };
             });
             services.AddControllers();
