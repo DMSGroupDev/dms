@@ -31,13 +31,13 @@ namespace dms_backend_api.Services.Identity
 
             var tokenDescriptor = new SecurityTokenDescriptor
             {
-                Issuer = Environment.GetEnvironmentVariable("JWT_ValidIssuer") ?? (string)_configuration.GetValue(typeof(string), "JWT_ValidIssuer"),
-                Audience = Environment.GetEnvironmentVariable("JWT_ValidAudience") ?? (string)_configuration.GetValue(typeof(string), "JWT_ValidAudience"),
+                Issuer = (string)_configuration.GetValue(typeof(string), "JWT_ValidIssuer"),
+                Audience = (string)_configuration.GetValue(typeof(string), "JWT_ValidAudience"),
                 Subject = new ClaimsIdentity(new[] { new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()), new Claim(ClaimTypes.Email, user.Email) }),
                 Expires = DateTime.UtcNow.AddHours(2),
                 Claims = authClaims,
                 SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(
-                    Encoding.ASCII.GetBytes(Environment.GetEnvironmentVariable("JWT_Secret") ?? (string)_configuration.GetValue(typeof(string), "JWT_Secret"))), SecurityAlgorithms.HmacSha256Signature),
+                    Encoding.ASCII.GetBytes((string)_configuration.GetValue(typeof(string), "JWT_Secret"))), SecurityAlgorithms.HmacSha256Signature),
                 IssuedAt = DateTime.UtcNow
             };
             return tokenHandler.WriteToken(tokenHandler.CreateToken(tokenDescriptor));

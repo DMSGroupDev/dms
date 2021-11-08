@@ -1,12 +1,12 @@
-﻿
+﻿using System;
 using System.ComponentModel.DataAnnotations;
 
-namespace dms_backend_api.ExternalModel.Authenticate
+namespace dms_backend_api.ExternalModel.Identity
 {
-    public partial class RegisterUserModelDTO
+    public partial class UpdateUserModelDTO
     {
-
-        public string RegistrationCallbackUrl { get; set; } = null!;
+        [Required]
+        public Guid Id { get; set; }
         [Required]
         public string UserName { get; set; } = null!;
         [Required]
@@ -22,8 +22,5 @@ namespace dms_backend_api.ExternalModel.Authenticate
         [DataType(DataType.Password)]
         public string Password { get; set; } = null!;
 
-        [DataType(DataType.Password)]
-        [Compare("Password", ErrorMessage = "The password and confirmation password do not match.")]
-        public string ConfirmPassword { get; set; } = null!;
     }
 }

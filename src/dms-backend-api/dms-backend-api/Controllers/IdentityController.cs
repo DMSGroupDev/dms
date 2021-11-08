@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using dms_backend_api.Domain.Identity;
 using dms_backend_api.ExternalModel.Identity;
+using dms_backend_api.Factories;
 using dms_backend_api.Response;
 using dms_backend_api.Services.Identity;
 using Microsoft.AspNetCore.Authorization;
@@ -30,6 +31,7 @@ namespace dms_backend_api.Controllers
         private readonly IMapper _mapper;
         private readonly ITokenService _tokenService;
         private readonly IEmailSender _emailSender;
+        private readonly IErrorFactory _errorFactory;
         #endregion
 
         #region Ctor
@@ -38,7 +40,8 @@ namespace dms_backend_api.Controllers
                                       IHttpContextAccessor httpContextAccessor,
                                       IMapper mapper,
                                       ITokenService tokenService,
-                                      IEmailSender emailSender)
+                                      IEmailSender emailSender,
+                                      IErrorFactory errorFactory)
         {
             _identityService = identityService;
             _logger = logger;
@@ -49,10 +52,131 @@ namespace dms_backend_api.Controllers
             _mapper = mapper;
             _tokenService = tokenService;
             _emailSender = emailSender;
+            _errorFactory = errorFactory;
         }
         #endregion
 
         #region Methods
+
+        #region Users
+
+        [HttpPost]
+        public async Task<IActionResult> AddUser([FromBody] AddUserModelDTO addUserModel)
+        {
+            try
+            {
+                if (ModelState.IsValid)
+                {
+                    var result = await _userManager.CreateAsync(_mapper.Map<ApplicationUser>(addUserModel));
+
+                    if (result.Succeeded)
+                    {
+                        var user = _userManager.Users.Where(x => x.Email == addUserModel.Email).FirstOrDefault();
+                        if (user != null)
+                            return Ok(new BasicResponse() { Message = $"User sucessfully created:{ user.Id}", StatusCode = (int)HttpStatusCode.OK });
+
+                        return NotFound(new BasicResponse() { Message = $"User not found :{ addUserModel.Email}", StatusCode = (int)HttpStatusCode.NotFound });
+                    }
+                    foreach (var error in result.Errors)
+                    {
+                        ModelState.AddModelError(string.Empty, error.Description);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"AddUser: {ex.Message}");
+                return BadRequest(new BasicResponse() { Message = $"{ex.Message}", StatusCode = (int)HttpStatusCode.BadRequest });
+            }
+            return BadRequest(new BasicResponse() { Message = $"", StatusCode = (int)HttpStatusCode.ExpectationFailed });
+        }
+
+        [HttpGet]
+        public IActionResult GetUserById(Guid Id)
+        {
+            try
+            {
+                if (Id != Guid.Empty)
+                {
+                    var role = _userManager.Users.Where(x => x.Id.Equals(Id)).First();
+                    if (role != null)
+                        return Ok(role);
+                    return NotFound(new BasicResponse() { Message = $"User with id:{Id} was not found.", StatusCode = (int)HttpStatusCode.NotFound });
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"GetUserById: {ex.Message}");
+                return BadRequest(new BasicResponse() { Message = $"{ex.Message}", StatusCode = (int)HttpStatusCode.BadRequest });
+            }
+            return BadRequest(new BasicResponse() { Message = $"", StatusCode = (int)HttpStatusCode.BadRequest, ErrorResponse = _errorFactory.ModelStateToErrorResponse(ModelState) });
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> DeleteUserByIdAsync(Guid Id)
+        {
+            try
+            {
+                if (Id != Guid.Empty)
+                {
+                    var user = _userManager.Users.Where(x => x.Id.Equals(Id)).First();
+                    if (user != null)
+                    {
+                        var result = await _userManager.DeleteAsync(user);
+                        if (result.Succeeded)
+                        {
+                            return Ok(new BasicResponse() { Message = $"User sucessfully deleted:{ user.Id}", StatusCode = (int)HttpStatusCode.OK });
+                        }
+                        foreach (var error in result.Errors)
+                        {
+                            ModelState.AddModelError(string.Empty, error.Description);
+                        }
+                    }
+                    return NotFound(new BasicResponse() { Message = $"User with id:{Id} was not found.", StatusCode = (int)HttpStatusCode.NotFound });
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"DeleteUserByIdAsync: {ex.Message}");
+                return BadRequest(new BasicResponse() { Message = $"{ex.Message}", StatusCode = (int)HttpStatusCode.BadRequest });
+            }
+            return BadRequest(new BasicResponse() { Message = $"", StatusCode = (int)HttpStatusCode.BadRequest, ErrorResponse = _errorFactory.ModelStateToErrorResponse(ModelState) });
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> UpdateUseryIdAsync([FromBody] UpdateUserModelDTO updateRoleModel)
+        {
+            try
+            {
+                if (updateRoleModel.Id != Guid.Empty)
+                {
+                    var user = _userManager.Users.Where(x => x.Id.Equals(updateRoleModel.Id)).First();
+                    if (user != null)
+                    {
+                        user = _mapper.Map<ApplicationUser>(updateRoleModel);
+
+                        var result = await _userManager.UpdateAsync(user);
+                        if (result.Succeeded)
+                        {
+                            return Ok(new BasicResponse() { Message = $"User sucessfully updated:{user.Id}", StatusCode = (int)HttpStatusCode.OK });
+                        }
+                        foreach (var error in result.Errors)
+                        {
+                            ModelState.AddModelError(string.Empty, error.Description);
+                        }
+                    }
+                    return NotFound(new BasicResponse() { Message = $"User with id:{updateRoleModel.Id} was not found.", StatusCode = (int)HttpStatusCode.NotFound });
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"UpdateUseryIdAsync :{ex.Message}");
+                return BadRequest(new BasicResponse() { Message = $"{ex.Message}", StatusCode = (int)HttpStatusCode.BadRequest });
+            }
+            return BadRequest(new BasicResponse() { Message = $"", StatusCode = (int)HttpStatusCode.BadRequest, ErrorResponse = _errorFactory.ModelStateToErrorResponse(ModelState) });
+        }
+
+        #endregion
 
         #region Roles
 
@@ -86,7 +210,7 @@ namespace dms_backend_api.Controllers
                 _logger.LogError($"AddRole: {ex.Message}");
                 return BadRequest(new BasicResponse() { Message = $"{ex.Message}", StatusCode = (int)HttpStatusCode.BadRequest });
             }
-            return BadRequest(new BasicResponse() { Message = $"{string.Join(Environment.NewLine, ModelState)}", StatusCode = (int)HttpStatusCode.ExpectationFailed });
+            return BadRequest(new BasicResponse() { Message = $"", StatusCode = (int)HttpStatusCode.BadRequest, ErrorResponse = _errorFactory.ModelStateToErrorResponse(ModelState) });
         }
 
         [HttpGet]
@@ -121,7 +245,7 @@ namespace dms_backend_api.Controllers
                 _logger.LogError($"GetRoleById: {ex.Message}");
                 return BadRequest(new BasicResponse() { Message = $"{ex.Message}", StatusCode = (int)HttpStatusCode.BadRequest });
             }
-            return BadRequest(new BasicResponse() { Message = $"{string.Join(Environment.NewLine, ModelState)}", StatusCode = (int)HttpStatusCode.ExpectationFailed });
+            return BadRequest(new BasicResponse() { Message = $"", StatusCode = (int)HttpStatusCode.BadRequest, ErrorResponse = _errorFactory.ModelStateToErrorResponse(ModelState) });
         }
 
         [HttpGet]
@@ -152,7 +276,7 @@ namespace dms_backend_api.Controllers
                 _logger.LogError($"DeleteRoleByIdAsync: {ex.Message}");
                 return BadRequest(new BasicResponse() { Message = $"{ex.Message}", StatusCode = (int)HttpStatusCode.BadRequest });
             }
-            return BadRequest(new BasicResponse() { Message = $"{string.Join(Environment.NewLine, ModelState)}", StatusCode = (int)HttpStatusCode.ExpectationFailed });
+            return BadRequest(new BasicResponse() { Message = $"", StatusCode = (int)HttpStatusCode.BadRequest, ErrorResponse = _errorFactory.ModelStateToErrorResponse(ModelState) });
         }
 
         [HttpPost]
@@ -186,7 +310,7 @@ namespace dms_backend_api.Controllers
                 _logger.LogError($"UpdateRoleByIdAsync :{ex.Message}");
                 return BadRequest(new BasicResponse() { Message = $"{ex.Message}", StatusCode = (int)HttpStatusCode.BadRequest });
             }
-            return BadRequest(new BasicResponse() { Message = $"{string.Join(Environment.NewLine, ModelState)}", StatusCode = (int)HttpStatusCode.ExpectationFailed });
+            return BadRequest(new BasicResponse() { Message = $"", StatusCode = (int)HttpStatusCode.BadRequest, ErrorResponse = _errorFactory.ModelStateToErrorResponse(ModelState) });
         }
         #endregion
 

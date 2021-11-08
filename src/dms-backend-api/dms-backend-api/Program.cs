@@ -1,6 +1,7 @@
 using Azure.Extensions.AspNetCore.Configuration.Secrets;
 using Azure.Identity;
 using Azure.Security.KeyVault.Secrets;
+using dms_backend_api.Helpers;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
@@ -20,15 +21,13 @@ namespace dms_backend_api
             Host.CreateDefaultBuilder(args)
                 .ConfigureAppConfiguration((context, config) =>
                 {
-                    string? keyVaultEndpoint = Environment.GetEnvironmentVariable("KEYVAULT_ENDPOINT");
-
-                    if (keyVaultEndpoint is null)
-                        throw new InvalidOperationException("Store the Key Vault endpoint in a KEYVAULT_ENDPOINT environment variable.");
+                    EnviromentVariablesHelper.EnviromentVariablesCheck(config);
 
                     var root = config.Build();
-
+                    
                     config.AddEnvironmentVariables();
-                    config.AddAzureKeyVault(new SecretClient(new Uri(keyVaultEndpoint),
+
+                    config.AddAzureKeyVault(new SecretClient(new Uri((string)root.GetValue(typeof(string), "KEYVAULT_ENDPOINT")),
                         new ClientSecretCredential((string)root["AzureKeyVault:TenantId"], (string)root["AzureKeyVault:ClientId"], (string)root["AzureKeyVault:ClientSecretId"])),
                         new KeyVaultSecretManager());
 

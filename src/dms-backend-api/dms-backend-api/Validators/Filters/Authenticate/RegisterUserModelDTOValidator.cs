@@ -1,6 +1,5 @@
 ﻿
 using dms_backend_api.ExternalModel.Authenticate;
-using dms_backend_api.ExternalModel.Identity;
 using FluentValidation;
 
 namespace dms_backend_api.Validators.Filters.Identity
@@ -10,6 +9,7 @@ namespace dms_backend_api.Validators.Filters.Identity
         public RegisterUserModelDTOValidator()
         {
             RuleFor(x => x.Email).NotEmpty().EmailAddress();
+            RuleFor(x => x.UserName).NotEmpty();
             RuleFor(x => x.FirstName).NotEmpty();
             RuleFor(x => x.LastName).NotEmpty();
             RuleFor(x => x.Password).Length(5, 100);

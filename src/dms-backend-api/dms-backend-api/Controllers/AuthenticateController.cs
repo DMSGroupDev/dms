@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using dms_backend_api.Domain.Identity;
 using dms_backend_api.ExternalModel.Authenticate;
+using dms_backend_api.Factories;
 using dms_backend_api.Response;
 using dms_backend_api.Response.Identity;
 using dms_backend_api.Services.Identity;
@@ -11,7 +12,6 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.Logging;
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Text;
@@ -34,6 +34,7 @@ namespace dms_backend_api.Controllers
         private readonly IMapper _mapper;
         private readonly ITokenService _tokenService;
         private readonly IEmailSender _emailSender;
+        private readonly IErrorFactory _errorFactory;
         #endregion
 
         #region Ctor
@@ -42,7 +43,8 @@ namespace dms_backend_api.Controllers
                                       IHttpContextAccessor httpContextAccessor,
                                       IMapper mapper,
                                       ITokenService tokenService,
-                                      IEmailSender emailSender)
+                                      IEmailSender emailSender,
+                                      IErrorFactory errorFactory)
         {
             _identityService = identityService;
             _logger = logger;
@@ -53,30 +55,19 @@ namespace dms_backend_api.Controllers
             _mapper = mapper;
             _tokenService = tokenService;
             _emailSender = emailSender;
+            _errorFactory = errorFactory;
         }
         #endregion
 
         #region Methods
         [HttpPost]
         [AllowAnonymous]
-        public async Task<IActionResult> UserValidation([FromBody] UserValidationModelDTO userValidationModel)
+        public IActionResult UserValidation([FromBody] UserValidationModelDTO userValidationModel)
         {
             try
             {
                 if (ModelState.IsValid)
                 {
-                    var emailAlreadyExists = (await _userManager.FindByEmailAsync(userValidationModel.Email));
-                    var userNameAlreadyExists = await _userManager.FindByNameAsync(userValidationModel.UserName);
-
-                    if (emailAlreadyExists != null)
-                        ModelState.AddModelError(string.Empty, "Email is already used.");
-
-                    if (userNameAlreadyExists != null)
-                        ModelState.AddModelError(string.Empty, "UserName is already used.");
-                    if (ModelState.ErrorCount > 0)
-                    {
-                        return BadRequest(new BasicResponse() { Message = $"{string.Join(Environment.NewLine, ModelState)}", StatusCode = (int)HttpStatusCode.BadRequest });
-                    }
                     return Ok(new BasicResponse() { Message = $"Combination is valid", StatusCode = (int)HttpStatusCode.OK });
                 }
             }
@@ -85,7 +76,7 @@ namespace dms_backend_api.Controllers
                 _logger.LogError($"UserValidation: {ex.Message}");
                 return BadRequest(new BasicResponse() { Message = $"{ex.Message}", StatusCode = (int)HttpStatusCode.BadRequest });
             }
-            return BadRequest(new BasicResponse() { Message = $"{string.Join(Environment.NewLine, ModelState)}", StatusCode = (int)HttpStatusCode.ExpectationFailed });
+            return BadRequest(new BasicResponse() { Message = $"", StatusCode = (int)HttpStatusCode.BadRequest, ErrorResponse = _errorFactory.ModelStateToErrorResponse(ModelState) });
         }
 
         [HttpPost]
@@ -121,7 +112,7 @@ namespace dms_backend_api.Controllers
                 _logger.LogError($"RegisterAsync: {ex.Message}");
                 return BadRequest(new BasicResponse() { Message = $"{ex.Message}", StatusCode = (int)HttpStatusCode.BadRequest });
             }
-            return BadRequest(new BasicResponse() { Message = $"{string.Join(Environment.NewLine, ModelState)}", StatusCode = (int)HttpStatusCode.ExpectationFailed });
+            return BadRequest(new BasicResponse() { Message = $"", StatusCode = (int)HttpStatusCode.BadRequest, ErrorResponse = _errorFactory.ModelStateToErrorResponse(ModelState) });
         }
 
         [HttpPost]
@@ -166,7 +157,7 @@ namespace dms_backend_api.Controllers
                 _logger.LogError($"Login: {ex.Message}");
                 return BadRequest(new LoginResponse() { Message = $"{ex.Message}", StatusCode = (int)HttpStatusCode.BadRequest });
             }
-            return BadRequest(new LoginResponse() { Message = $"{string.Join(Environment.NewLine, ModelState)}", StatusCode = (int)HttpStatusCode.ExpectationFailed });
+            return BadRequest(new LoginResponse() { Message = $"", StatusCode = (int)HttpStatusCode.BadRequest, ErrorResponse = _errorFactory.ModelStateToErrorResponse(ModelState) });
         }
 
         [Authorize]
@@ -181,7 +172,7 @@ namespace dms_backend_api.Controllers
             catch (Exception ex)
             {
                 _logger.LogError($"Logout: {ex.Message}");
-                return BadRequest(new LoginResponse() { Message = $"{ex.Message}", StatusCode = (int)HttpStatusCode.BadRequest });
+                return BadRequest(new BasicResponse() { Message = $"{ex.Message}", StatusCode = (int)HttpStatusCode.BadRequest });
             }
         }
         #endregion

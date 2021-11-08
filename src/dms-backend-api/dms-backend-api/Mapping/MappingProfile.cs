@@ -13,8 +13,21 @@ namespace dms_backend_api.Mapping
 
         public MappingProfile()
         {
+            #region Users
+
             CreateMap<RegisterUserModelDTO, ApplicationUser>();
+            CreateMap<UpdateUserModelDTO, ApplicationUser>();
+            CreateMap<AddUserModelDTO, ApplicationUser>();
+
+            #endregion
+
+            #region Roles
+
             CreateMap<AddRoleModelDTO, ApplicationRole>();
+            CreateMap<UpdateRoleModelDTO, ApplicationRole>();
+            
+            #endregion
+        
         }
     }
 }
