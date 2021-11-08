@@ -1,5 +1,6 @@
 using AutoMapper;
 using dms_backend_api.Controllers;
+using dms_backend_api.Factories;
 using dms_backend_api.Services.Identity;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
@@ -21,7 +22,8 @@ namespace dms_backend_api.Tests
                 new Mock<IHttpContextAccessor>().Object,
                 new Mock<IMapper>().Object,
                 new Mock<ITokenService>().Object,
-                new Mock<IEmailSender>().Object);
+                new Mock<IEmailSender>().Object,
+                new Mock<IErrorFactory>().Object);
 
             var result = controller.Echo();
             Assert.AreEqual(result, testText);
