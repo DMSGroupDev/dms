@@ -6,8 +6,8 @@ namespace dms_backend_api.ExternalModel.Identity
     {
         public UpdateRoleModelDTOValidator()
         {
-            RuleFor(x => x.Id).NotEmpty();
-            RuleFor(x => x.Name).NotEmpty();
+            RuleFor(x => x.Id).NotEmpty().WithErrorCode("1");
+            RuleFor(x => x.Name).NotEmpty().WithErrorCode("1");
         }
     }
 }

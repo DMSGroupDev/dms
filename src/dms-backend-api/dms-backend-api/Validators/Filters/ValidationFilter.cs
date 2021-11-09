@@ -1,6 +1,7 @@
 ﻿
 using dms_backend_api.Model;
 using dms_backend_api.Response;
+using FluentValidation.Results;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
 using System.Linq;
@@ -20,12 +21,15 @@ namespace dms_backend_api.Validators.Filters
                     .Where(x => x.Value?.Errors.Count > 0)
                     .ToDictionary(x => x.Key, x => x.Value?.Errors.Select(x => x.ErrorMessage)).ToList();
 
-                var errorResponse = new ErrorResponse();
+                if (!context.HttpContext.Items.TryGetValue("ValidationResult", out var value))
+                    return;
+                if (value is not ValidationResult vldResult)
+                    return;
 
-                foreach (var error in errorInModelState)
-                    if (error.Value != null)
-                        foreach (var errorMessage in error.Value)
-                            errorResponse.Errors.Add(new ErrorModel() { FieldName = error.Key, ErrorMessage = errorMessage });
+                var errorResponse = new ErrorResponse
+                {
+                    Errors = vldResult.Errors.Select(err => new ErrorModel(err)).ToList()
+                };
 
                 context.Result = new BadRequestObjectResult(new BasicResponse() { ErrorResponse = errorResponse, Message = "", StatusCode = (int)HttpStatusCode.BadRequest });
                 return;

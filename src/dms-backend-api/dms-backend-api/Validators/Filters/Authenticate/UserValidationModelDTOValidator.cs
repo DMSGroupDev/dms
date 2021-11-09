@@ -12,19 +12,18 @@ namespace dms_backend_api.Validators.Filters.Identity
         {
             _userManager = userManager;
 
-            RuleFor(x => x.Email).NotEmpty().EmailAddress();
+            RuleFor(x => x.Email).NotEmpty().WithErrorCode("1").EmailAddress().WithErrorCode("1");
             RuleFor(x => x.Email).MustAsync(async (Email, cancellation) =>
             {
                 return await _userManager.FindByEmailAsync(email: Email) == null;
-            }).WithMessage("Email must be unique");
+            }).WithMessage("Email must be unique").WithErrorCode("2");
 
-            RuleFor(x => x.UserName).NotEmpty();
+            RuleFor(x => x.UserName).NotEmpty().WithErrorCode("1");
             RuleFor(x => x.UserName).MustAsync(async (UserName, cancellation) =>
             {
-
                 return await _userManager.FindByNameAsync(UserName) == null;
-            }).WithMessage("UserName must be unique");
-            
+            }).WithMessage("UserName must be unique").WithErrorCode("2");
+
         }
     }
 }
