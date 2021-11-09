@@ -8,6 +8,7 @@ using dms_backend_api.Mapping;
 using dms_backend_api.Services;
 using dms_backend_api.Services.Identity;
 using dms_backend_api.Services.Utils;
+using dms_backend_api.Validators;
 using dms_backend_api.Validators.Filters;
 using dms_backend_api.Validators.Filters.Identity;
 using dms_backend_api.Validators.Filters.Util;
@@ -44,6 +45,8 @@ namespace dms_backend_api.Infrastracture
             #endregion
 
             #region Validation
+            services.AddTransient<IValidatorInterceptor, ValidatorInterceptor>();
+
             services.Configure<ApiBehaviorOptions>(options => { options.SuppressModelStateInvalidFilter = true; })
             .AddMvc(x => x.Filters.Add(new ValidationFilter())).AddFluentValidation(config => {config.AutomaticValidationEnabled = true; });
 

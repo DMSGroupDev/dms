@@ -7,7 +7,7 @@ namespace dms_backend_api.Validators.Filters.Util
     {
         public MailModelDTOValidator()
         {
-            RuleFor(x => x.EmailTo.Email).NotEmpty();
+            RuleFor(x => x.EmailTo.Email).NotEmpty().WithErrorCode("1");
         }
     }
 }
