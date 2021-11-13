@@ -1,5 +1,6 @@
 ﻿
 using AutoMapper.Data;
+using dms_backend_api.Domain.Identity;
 using dms_backend_api.ExternalModel.Authenticate;
 using dms_backend_api.ExternalModel.Identity;
 using dms_backend_api.ExternalModel.Util;
@@ -14,10 +15,10 @@ using dms_backend_api.Validators.Filters.Identity;
 using dms_backend_api.Validators.Filters.Util;
 using FluentValidation;
 using FluentValidation.AspNetCore;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using SendGrid;
 using SendGrid.Extensions.DependencyInjection;
 using System;
 
@@ -39,8 +40,16 @@ namespace dms_backend_api.Infrastracture
 
             #endregion
 
+            #region Identity
+            services.AddSingleton<IUserTwoFactorTokenProvider<ApplicationUser>, UserTokenProvider<ApplicationUser>>();
+            #endregion
+
             #region Utils
-            services.AddSendGrid(options => { options.ApiKey = configuration["SENDGRID_API_KEY"]; });
+            var SendgridApiKey = (string)configuration.GetValue(typeof(string), "SendgridApiKey");
+            if (string.IsNullOrEmpty(SendgridApiKey))
+                throw new InvalidOperationException("The SendgridApiKey is empty.");
+
+            services.AddSendGrid(options => { options.ApiKey = SendgridApiKey; });
             services.AddHttpContextAccessor();
             #endregion
 
@@ -48,7 +57,7 @@ namespace dms_backend_api.Infrastracture
             services.AddTransient<IValidatorInterceptor, ValidatorInterceptor>();
 
             services.Configure<ApiBehaviorOptions>(options => { options.SuppressModelStateInvalidFilter = true; })
-            .AddMvc(x => x.Filters.Add(new ValidationFilter())).AddFluentValidation(config => {config.AutomaticValidationEnabled = true; });
+            .AddMvc(x => x.Filters.Add(new ValidationFilter())).AddFluentValidation(config => { config.AutomaticValidationEnabled = true; });
 
             services.AddTransient<IValidator<LoginUserModelDTO>, LoginUserModelDTOValidator>();
             services.AddTransient<IValidator<RegisterUserModelDTO>, RegisterUserModelDTOValidator>();

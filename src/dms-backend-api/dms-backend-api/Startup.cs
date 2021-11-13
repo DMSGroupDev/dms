@@ -2,6 +2,7 @@ using dms_backend_api.Data;
 using dms_backend_api.Domain.Identity;
 using dms_backend_api.Helpers;
 using dms_backend_api.Infrastracture;
+using dms_backend_api.Services.Identity;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -10,9 +11,11 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi.Models;
 using Serilog;
 using Serilog.Events;
 using System;
+using System.Collections.Generic;
 using System.Text;
 
 namespace dms_backend_api
@@ -41,13 +44,46 @@ namespace dms_backend_api
             services.AddEntityFrameworkNpgsql().AddDbContext<ApplicationDbContext>(options => { options.UseNpgsql($"User ID={ConnProp.User};Password={ConnProp.Password};Host={ConnProp.Hostname};Port={ConnProp.Port};Database={ConnProp.DatabaseName}"); });
 
             services.AddIdentity<ApplicationUser, ApplicationRole>(options => options.SignIn.RequireConfirmedAccount = true)
-                .AddEntityFrameworkStores<ApplicationDbContext>();
+                .AddEntityFrameworkStores<ApplicationDbContext>()
+                 .AddTokenProvider("Default", typeof(UserTokenProvider<ApplicationUser>));
 
 
             services.AddSwaggerGen(c =>
             {
                 c.SwaggerDoc("v1", new() { Title = "dms_backend_api", Version = "v1" });
+                c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+                {
+                    Description = @"JWT Authorization header using the Bearer scheme. \r\n\r\n 
+                      Enter 'Bearer' [space] and then your token in the text input below.
+                      \r\n\r\nExample: 'Bearer xxxxxxxx'",
+                    Name = "Authorization",
+                    In = ParameterLocation.Header,
+                    Type = SecuritySchemeType.ApiKey,
+                    Scheme = "Bearer"
+                });
+                c.AddSecurityRequirement(new OpenApiSecurityRequirement()
+                {
+                    {
+                      new OpenApiSecurityScheme
+                      {
+                        Reference = new OpenApiReference
+                          {
+                            Type = ReferenceType.SecurityScheme,
+                            Id = "Bearer"
+                          },
+                          Scheme = "oauth2",
+                          Name = "Bearer",
+                          In = ParameterLocation.Header,
+
+                        },
+                        new List<string>()
+                      }
+                });
             });
+
+            var JWTSecret = (string)_configuration.GetValue(typeof(string), "JWTSecret");
+            if (string.IsNullOrEmpty(JWTSecret))
+                throw new InvalidOperationException("The JWT Secret is empty.");
 
             // Adding Authentication  
             services.AddAuthentication(options =>
@@ -67,7 +103,7 @@ namespace dms_backend_api
                     ValidateAudience = true,
                     ValidAudience = (string)_configuration.GetValue(typeof(string), "JWT_ValidAudience"),
                     ValidIssuer = (string)_configuration.GetValue(typeof(string), "JWT_ValidIssuer"),
-                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes((string)_configuration.GetValue(typeof(string), "JWT_Secret")))
+                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes((string)_configuration.GetValue(typeof(string), "JWTSecret")))
                 };
             });
             services.AddControllers();

@@ -96,10 +96,12 @@ namespace dms_backend_api.Controllers
                         var code = await _userManager.GenerateEmailConfirmationTokenAsync(user);
                         code = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(code));
 
-                        await _emailSender.SendEmailAsync(emailTo: user, subject: "Confirm your email", htmlMessage: $"Please confirm your account by <a href='" +
+                        var emailResponse = await _emailSender.SendEmailAsync(emailTo: user, subject: "Confirm your email", htmlMessage: $"Please confirm your account by <a href='" +
                             $"{HtmlEncoder.Default.Encode(string.Format(registerUserModel.RegistrationCallbackUrl, code))}'>clicking here</a>.");
 
-                        return Ok(new BasicResponse() { Message = $"Confirmation code:{code}", StatusCode = (int)HttpStatusCode.OK });
+                        if (emailResponse.StatusCode == (int)HttpStatusCode.OK)
+                            return Ok(new BasicResponse() { Message = $"Confirmation code:{code}", StatusCode = (int)HttpStatusCode.OK });
+                        return Ok(emailResponse);
                     }
                     foreach (var error in result.Errors)
                     {
@@ -123,32 +125,36 @@ namespace dms_backend_api.Controllers
             {
                 if (ModelState.IsValid)
                 {
-                    var result = await _signInManager.PasswordSignInAsync(model.Email, model.Password, false, lockoutOnFailure: false);
-                    if (result.Succeeded)
+                    var user = await _userManager.FindByEmailAsync(model.Email);
+                    if (user != null)
                     {
+                        var result = await _signInManager.PasswordSignInAsync(user.UserName, model.Password, false, lockoutOnFailure: false);
+                        if (result.Succeeded)
+                        {
 
 #pragma warning disable CS8602 // Dereference of a possibly null reference.
-                        if (_httpContextAccessor.HttpContext.User != null)
-                        {
-#pragma warning restore CS8602 // Dereference of a possibly null reference.
-                            var user = await _userManager.GetUserAsync(_httpContextAccessor.HttpContext.User);
-                            return Ok(new LoginResponse()
+                            if (_httpContextAccessor.HttpContext.User != null)
                             {
-                                ApplicationUser = user,
-                                Token = _tokenService.GenerateToken(user, (await _userManager.GetRolesAsync(user)).ToList()),
-                                Message = $"User sucessfully logged.",
-                                StatusCode = (int)HttpStatusCode.OK
-                            });
+#pragma warning restore CS8602 // Dereference of a possibly null reference.
+
+                                return Ok(new LoginResponse()
+                                {
+                                    ApplicationUser = user,
+                                    Token = _tokenService.GenerateToken(user, (await _userManager.GetRolesAsync(user)).ToList()),
+                                    Message = $"User sucessfully logged.",
+                                    StatusCode = (int)HttpStatusCode.OK
+                                });
+                            }
+                            return Ok(new LoginResponse() { Message = $"User account don't exist.", StatusCode = (int)HttpStatusCode.ExpectationFailed });
                         }
-                        return Ok(new LoginResponse() { Message = $"User account don't exist.", StatusCode = (int)HttpStatusCode.ExpectationFailed });
-                    }
-                    if (result.IsLockedOut)
-                    {
-                        return Ok(new LoginResponse() { Message = $"User account locked out.", StatusCode = (int)HttpStatusCode.ExpectationFailed });
-                    }
-                    else
-                    {
-                        ModelState.AddModelError(string.Empty, "Invalid login attempt.");
+                        if (result.IsLockedOut)
+                        {
+                            return Ok(new LoginResponse() { Message = $"User account locked out.", StatusCode = (int)HttpStatusCode.ExpectationFailed });
+                        }
+                        else
+                        {
+                            ModelState.AddModelError(string.Empty, "Invalid login attempt.");
+                        }
                     }
                 }
             }
@@ -158,6 +164,20 @@ namespace dms_backend_api.Controllers
                 return BadRequest(new LoginResponse() { Message = $"{ex.Message}", StatusCode = (int)HttpStatusCode.BadRequest });
             }
             return BadRequest(new LoginResponse() { Message = $"", StatusCode = (int)HttpStatusCode.BadRequest, ErrorResponse = _errorFactory.ModelStateToErrorResponse(ModelState) });
+        }
+
+        [HttpGet]
+        [Authorize]
+        public async Task<IActionResult> WhoAmI()
+        {
+#pragma warning disable CS8602 // Dereference of a possibly null reference.
+            if (_httpContextAccessor.HttpContext.User != null)
+            {
+#pragma warning restore CS8602 // Dereference of a possibly null reference.
+                var user = await _userManager.GetUserAsync(_httpContextAccessor.HttpContext.User);
+                return Ok(user);
+            }
+            return NotFound();
         }
 
         [Authorize]

@@ -29,6 +29,10 @@ namespace dms_backend_api.Services.Identity
             foreach (var role in applicationRoles)
                 authClaims.Add(ClaimTypes.Role, role);
 
+            var JWTSecret = (string)_configuration.GetValue(typeof(string), "JWTSecret");
+            if (string.IsNullOrEmpty(JWTSecret))
+                throw new InvalidOperationException("The JWT Secret is empty.");
+
             var tokenDescriptor = new SecurityTokenDescriptor
             {
                 Issuer = (string)_configuration.GetValue(typeof(string), "JWT_ValidIssuer"),
@@ -37,7 +41,7 @@ namespace dms_backend_api.Services.Identity
                 Expires = DateTime.UtcNow.AddHours(2),
                 Claims = authClaims,
                 SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(
-                    Encoding.ASCII.GetBytes((string)_configuration.GetValue(typeof(string), "JWT_Secret"))), SecurityAlgorithms.HmacSha256Signature),
+                    Encoding.ASCII.GetBytes(JWTSecret)), SecurityAlgorithms.HmacSha256Signature),
                 IssuedAt = DateTime.UtcNow
             };
             return tokenHandler.WriteToken(tokenHandler.CreateToken(tokenDescriptor));

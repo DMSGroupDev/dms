@@ -50,8 +50,7 @@ namespace dms_backend_api.Controllers
         {
             try
             {
-                var response = await _emailSender.SendEmailAsync(emailModel.EmailTo, emailModel.EmailFrom, emailModel.Subject, emailModel.HtmlMessage, emailModel.TemplateId, emailModel.TemplateData, emailModel.Attachments);
-                return Ok(new BasicResponse() { Message = $"Mail sent.", StatusCode = (int)HttpStatusCode.OK });
+                return Ok(await _emailSender.SendEmailAsync(emailModel.EmailTo, emailModel.EmailFrom, emailModel.Subject, emailModel.HtmlMessage, emailModel.TemplateId, emailModel.TemplateData, emailModel.Attachments));
             }
             catch (Exception ex)
             {
