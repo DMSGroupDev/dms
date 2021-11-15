@@ -89,7 +89,7 @@ namespace dms_backend_api
                 options.AddPolicy(name: MyAllowSpecificOrigins,
                     builder =>
                     {
-                        builder.WithOrigins("http://dmsgroup2fr.azurewebsites.net/", "https://dmsgroup2fr.azurewebsites.net/").AllowAnyMethod().AllowAnyHeader();
+                        builder.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader();
                     }
                 )
             );
