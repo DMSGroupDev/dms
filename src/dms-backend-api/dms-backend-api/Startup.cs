@@ -85,6 +85,15 @@ namespace dms_backend_api
             if (string.IsNullOrEmpty(JWTSecret))
                 throw new InvalidOperationException("The JWT Secret is empty.");
 
+            services.AddCors(options =>
+                options.AddPolicy("MyPolicy",
+                    builder =>
+                    {
+                        builder.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader();
+                    }
+                )
+            );
+
             // Adding Authentication  
             services.AddAuthentication(options =>
             {
