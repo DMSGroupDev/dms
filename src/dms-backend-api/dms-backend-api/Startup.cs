@@ -22,7 +22,7 @@ namespace dms_backend_api
 {
     public partial class Startup
     {
-
+        readonly string MyAllowSpecificOrigins = "_myAllowSpecificOrigins";
         public static IConfiguration? _configuration;
 
         public Startup(IConfiguration configuration)
@@ -86,10 +86,10 @@ namespace dms_backend_api
                 throw new InvalidOperationException("The JWT Secret is empty.");
 
             services.AddCors(options =>
-                options.AddPolicy("MyPolicy",
+                options.AddPolicy(name: MyAllowSpecificOrigins,
                     builder =>
                     {
-                        builder.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader();
+                        builder.WithOrigins("http://dmsgroup2fr.azurewebsites.net/", "https://dmsgroup2fr.azurewebsites.net/").AllowAnyMethod().AllowAnyHeader();
                     }
                 )
             );
@@ -146,6 +146,8 @@ namespace dms_backend_api
             app.UseHttpsRedirection();
 
             app.UseRouting();
+
+            app.UseCors(MyAllowSpecificOrigins);
 
             app.UseAuthentication();
             app.UseAuthorization();
