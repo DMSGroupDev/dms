@@ -1,4 +1,5 @@
-﻿using FluentValidation;
+﻿using dms_backend_api.Helpers;
+using FluentValidation;
 
 namespace dms_backend_api.ExternalModel.Identity
 {
@@ -6,8 +7,8 @@ namespace dms_backend_api.ExternalModel.Identity
     {
         public UpdateRoleModelDTOValidator()
         {
-            RuleFor(x => x.Id).NotEmpty().WithErrorCode("1");
-            RuleFor(x => x.Name).NotEmpty().WithErrorCode("1");
+            RuleFor(x => x.Id).NotEmpty().WithErrorCode(ErrorCodes.EmptyOrInvalid.ToString());
+            RuleFor(x => x.Name).NotEmpty().WithErrorCode(ErrorCodes.EmptyOrInvalid.ToString());
         }
     }
 }
