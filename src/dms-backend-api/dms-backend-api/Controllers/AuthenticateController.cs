@@ -2,6 +2,7 @@
 using dms_backend_api.Domain.Identity;
 using dms_backend_api.ExternalModel.Authenticate;
 using dms_backend_api.Factories;
+using dms_backend_api.Helpers;
 using dms_backend_api.Response;
 using dms_backend_api.Response.Identity;
 using dms_backend_api.Services.Identity;
@@ -12,6 +13,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.Logging;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Text;
@@ -125,31 +127,49 @@ namespace dms_backend_api.Controllers
             {
                 if (ModelState.IsValid)
                 {
-                    var user = await _userManager.FindByEmailAsync(model.Email);
+                    var user = !string.IsNullOrEmpty(model.Email) ? await _userManager.FindByEmailAsync(model.Email) : await _userManager.FindByNameAsync(model.Username);
                     if (user != null)
                     {
                         var result = await _signInManager.PasswordSignInAsync(user.UserName, model.Password, false, lockoutOnFailure: false);
                         if (result.Succeeded)
                         {
-
 #pragma warning disable CS8602 // Dereference of a possibly null reference.
                             if (_httpContextAccessor.HttpContext.User != null)
                             {
 #pragma warning restore CS8602 // Dereference of a possibly null reference.
-
                                 return Ok(new LoginResponse()
                                 {
                                     ApplicationUser = user,
                                     Token = _tokenService.GenerateToken(user, (await _userManager.GetRolesAsync(user)).ToList()),
                                     Message = $"User sucessfully logged.",
-                                    StatusCode = (int)HttpStatusCode.OK
+                                    StatusCode = (int)HttpStatusCode.OK,
+                                    ApplicationRoles = (await _userManager.GetRolesAsync(user)).ToList()
                                 });
                             }
-                            return Ok(new LoginResponse() { Message = $"User account don't exist.", StatusCode = (int)HttpStatusCode.ExpectationFailed });
+
+                            return Ok(new LoginResponse()
+                            {
+                                Message = $"User account don't exist.",
+                                StatusCode = (int)HttpStatusCode.ExpectationFailed,
+                                ErrorResponse = new ErrorResponse()
+                                {
+                                    Errors = new List<Model.ErrorModel>
+                                      { new Model.ErrorModel() { AttemptedValue = !string.IsNullOrEmpty(model.Email) ? model.Email : model.Username, ErrorCode = ErrorCodes.NotFound.ToString(), ErrorMessage = "User account don't exist." }}
+                                }
+                            });
                         }
                         if (result.IsLockedOut)
                         {
-                            return Ok(new LoginResponse() { Message = $"User account locked out.", StatusCode = (int)HttpStatusCode.ExpectationFailed });
+                            return Ok(new LoginResponse()
+                            {
+                                Message = $"User account locked out.",
+                                StatusCode = (int)HttpStatusCode.ExpectationFailed,
+                                ErrorResponse = new ErrorResponse()
+                                {
+                                    Errors = new List<Model.ErrorModel>
+                                      { new Model.ErrorModel() { AttemptedValue = !string.IsNullOrEmpty(model.Email) ? model.Email : model.Username, ErrorCode = ErrorCodes.LockedOut.ToString(), ErrorMessage = "User account locked out." }}
+                                }
+                            });
                         }
                         else
                         {
@@ -175,7 +195,8 @@ namespace dms_backend_api.Controllers
             {
 #pragma warning restore CS8602 // Dereference of a possibly null reference.
                 var user = await _userManager.GetUserAsync(_httpContextAccessor.HttpContext.User);
-                return Ok(user);
+                (ApplicationUser user, List<string> roles) res = (user, (await _userManager.GetRolesAsync(user)).ToList());
+                return Ok(res);
             }
             return NotFound();
         }
