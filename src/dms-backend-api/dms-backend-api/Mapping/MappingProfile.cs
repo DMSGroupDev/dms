@@ -25,9 +25,9 @@ namespace dms_backend_api.Mapping
 
             CreateMap<AddRoleModelDTO, ApplicationRole>();
             CreateMap<UpdateRoleModelDTO, ApplicationRole>();
-            
+
             #endregion
-        
+
         }
     }
 }

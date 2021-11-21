@@ -2,16 +2,22 @@
 using dms_backend_api.Domain.Identity;
 using dms_backend_api.ExternalModel.Identity;
 using dms_backend_api.Factories;
+using dms_backend_api.Helpers;
+using dms_backend_api.Model;
 using dms_backend_api.Response;
 using dms_backend_api.Services.Identity;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.Logging;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using System.Text;
+using System.Text.Encodings.Web;
 using System.Threading.Tasks;
 
 namespace dms_backend_api.Controllers
@@ -57,6 +63,224 @@ namespace dms_backend_api.Controllers
         #endregion
 
         #region Methods
+
+        #region UserIdentityFunctions
+
+        [HttpPost]
+        public async Task<IActionResult> ConfirmEmailAsync(ConfirmationEmailModelDTO confirmationEmailModel)
+        {
+            try
+            {
+                if (ModelState.IsValid)
+                {
+                    var user = await _userManager.FindByIdAsync(confirmationEmailModel.UserId);
+                    if (user is null)
+                        return NotFound(new BasicResponse()
+                        {
+                            Message = $"Unable to find User with id : {confirmationEmailModel.UserId}",
+                            StatusCode = (int)HttpStatusCode.NotFound,
+                            ErrorResponse = new ErrorResponse()
+                            {
+                                Errors = new List<ErrorModel> {
+                            new ErrorModel()
+                            {
+                                AttemptedValue = confirmationEmailModel.UserId,
+                                ErrorCode = ErrorCodes.NotFound.ToString(),
+                                PropertyName = "UserId",
+                                ErrorMessage = $"Unable to find User with id: {confirmationEmailModel.UserId}"
+                            }
+                        }
+                            }
+                        });
+
+                    var result = await _userManager.ConfirmEmailAsync(user, Encoding.UTF8.GetString(WebEncoders.Base64UrlDecode(confirmationEmailModel.Code)));
+                    if (result.Succeeded)
+                    {
+                        return Ok(new BasicResponse()
+                        {
+                            Message = $"User confirmed sucessfully.",
+                            StatusCode = (int)HttpStatusCode.OK
+                        });
+                    }
+
+                    foreach (var err in result.Errors)
+                        ModelState.AddModelError(err.Code, err.Description);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"ConfirmEmailAsync: {ex.Message}");
+                return BadRequest(new BasicResponse() { Message = $"{ex.Message}", StatusCode = (int)HttpStatusCode.BadRequest });
+            }
+
+            return BadRequest(new BasicResponse() { Message = $"", StatusCode = (int)HttpStatusCode.BadRequest, ErrorResponse = _errorFactory.ModelStateToErrorResponse(ModelState) });
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> ReConfirmEmailAsync(ReConfirmationEmailModelDTO reconfirmationEmailModel)
+        {
+            try
+            {
+                if (ModelState.IsValid)
+                {
+                    var user = await _userManager.FindByEmailAsync(reconfirmationEmailModel.Email);
+                    if (user is null)
+                        return NotFound(new BasicResponse()
+                        {
+                            Message = $"Unable to find User with email : {reconfirmationEmailModel.Email}",
+                            StatusCode = (int)HttpStatusCode.NotFound,
+                            ErrorResponse = new ErrorResponse()
+                            {
+                                Errors = new List<ErrorModel> {
+                            new ErrorModel()
+                            {
+                                AttemptedValue = reconfirmationEmailModel.Email,
+                                ErrorCode = ErrorCodes.NotFound.ToString(),
+                                PropertyName = "Email",
+                                ErrorMessage = $"Unable to find User with id: {reconfirmationEmailModel.Email}"
+                            }
+                            }
+                            }
+                        });
+                    var code = await _userManager.GenerateEmailConfirmationTokenAsync(user);
+                    code = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(code));
+
+                    var emailResponse = await _emailSender.SendEmailAsync(emailTo: user, subject: "Confirm your email", htmlMessage: $"Please confirm your account by <a href='" +
+                        $"{HtmlEncoder.Default.Encode(string.Format(reconfirmationEmailModel.RegistrationCallbackUrl, user.Id, code))}'>clicking here</a>.");
+
+                    if (emailResponse.StatusCode == (int)HttpStatusCode.OK)
+                        return Ok(new RegisterReponse() { ConfirmationCode = code, UserId = user.Id.ToString(), Message = $"Confirmation code:{code} ", StatusCode = (int)HttpStatusCode.OK });
+                    return Ok(emailResponse);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"ReConfirmEmailAsync: {ex.Message}");
+                return BadRequest(new BasicResponse() { Message = $"{ex.Message}", StatusCode = (int)HttpStatusCode.BadRequest });
+            }
+            return BadRequest(new BasicResponse() { Message = $"", StatusCode = (int)HttpStatusCode.BadRequest, ErrorResponse = _errorFactory.ModelStateToErrorResponse(ModelState) });
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> ForgetPasswordAsync(ForgetPasswordModelDTO forgetPasswordModel)
+        {
+            try
+            {
+                if (ModelState.IsValid)
+                {
+                    var user = await _userManager.FindByEmailAsync(forgetPasswordModel.Email);
+                    if (user is null)
+                        return NotFound(new BasicResponse()
+                        {
+                            Message = $"Unable to find User with email  : {forgetPasswordModel.Email}",
+                            StatusCode = (int)HttpStatusCode.NotFound,
+                            ErrorResponse = new ErrorResponse()
+                            {
+                                Errors = new List<ErrorModel> {
+                            new ErrorModel()
+                            {
+                                AttemptedValue = forgetPasswordModel.Email,
+                                ErrorCode = ErrorCodes.NotFound.ToString(),
+                                PropertyName = "Email",
+                                ErrorMessage = $"Unable to find User with id: {forgetPasswordModel.Email}"
+                            }
+                            }
+                            }
+                        });
+
+                    if (!(await _userManager.IsEmailConfirmedAsync(user)))
+                    {
+                        return NotFound(new BasicResponse()
+                        {
+                            Message = $"Unable to valid User with email: {forgetPasswordModel.Email}",
+                            StatusCode = (int)HttpStatusCode.NotFound,
+                            ErrorResponse = new ErrorResponse()
+                            {
+                                Errors = new List<ErrorModel> {
+                            new ErrorModel()
+                            {
+                                AttemptedValue = forgetPasswordModel.Email,
+                                ErrorCode = ErrorCodes.EmptyOrInvalid.ToString(),
+                                PropertyName = "Email",
+                                ErrorMessage = $"Unable to valid User with email: {forgetPasswordModel.Email}"
+                            }
+                            }
+                            }
+                        });
+                    }
+                    var code = await _userManager.GeneratePasswordResetTokenAsync(user);
+                    code = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(code));
+
+                    var emailResponse = await _emailSender.SendEmailAsync(emailTo: user, subject: "Reset Password", htmlMessage: $"Please reset your password by <a href='" +
+                        $"{HtmlEncoder.Default.Encode(string.Format(forgetPasswordModel.RegistrationCallbackUrl, user.Id, code))}'>clicking here</a>.");
+
+                    if (emailResponse.StatusCode == (int)HttpStatusCode.OK)
+                        return Ok(new ForgetPasswordResponse() { ResetCode = code, Message = $"Reset code:{code} ", StatusCode = (int)HttpStatusCode.OK });
+
+                    return Ok(emailResponse);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"ForgetPassword: {ex.Message}");
+                return BadRequest(new BasicResponse() { Message = $"{ex.Message}", StatusCode = (int)HttpStatusCode.BadRequest });
+            }
+            return BadRequest(new BasicResponse() { Message = $"", StatusCode = (int)HttpStatusCode.BadRequest, ErrorResponse = _errorFactory.ModelStateToErrorResponse(ModelState) });
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> ResetPasswordAsync(ResetPasswordModelDTO forgetPasswordModel)
+        {
+            try
+            {
+                if (ModelState.IsValid)
+                {
+                    var user = await _userManager.FindByEmailAsync(forgetPasswordModel.Email);
+                    if (user is null)
+                        return NotFound(new BasicResponse()
+                        {
+                            Message = $"Unable to find User with email  : {forgetPasswordModel.Email}",
+                            StatusCode = (int)HttpStatusCode.NotFound,
+                            ErrorResponse = new ErrorResponse()
+                            {
+                                Errors = new List<ErrorModel> {
+                            new ErrorModel()
+                            {
+                                AttemptedValue = forgetPasswordModel.Email,
+                                ErrorCode = ErrorCodes.NotFound.ToString(),
+                                PropertyName = "Email",
+                                ErrorMessage = $"Unable to find User with id: {forgetPasswordModel.Email}"
+                            }
+                            }
+                            }
+                        });
+
+                    var result = await _userManager.ResetPasswordAsync(user, forgetPasswordModel.Code, forgetPasswordModel.Password);
+
+                    if (result.Succeeded)
+                    {
+                        return Ok(new BasicResponse()
+                        {
+                            Message = $"Password reset sucesfully.",
+                            StatusCode = (int)HttpStatusCode.OK
+                        });
+                    }
+
+                    foreach (var error in result.Errors)
+                    {
+                        ModelState.AddModelError(string.Empty, error.Description);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"ResetPassword: {ex.Message}");
+                return BadRequest(new BasicResponse() { Message = $"{ex.Message}", StatusCode = (int)HttpStatusCode.BadRequest });
+            }
+            return BadRequest(new BasicResponse() { Message = $"", StatusCode = (int)HttpStatusCode.BadRequest, ErrorResponse = _errorFactory.ModelStateToErrorResponse(ModelState) });
+        }
+
+        #endregion
 
         #region Users
 
@@ -143,6 +367,7 @@ namespace dms_backend_api.Controllers
             return BadRequest(new BasicResponse() { Message = $"", StatusCode = (int)HttpStatusCode.BadRequest, ErrorResponse = _errorFactory.ModelStateToErrorResponse(ModelState) });
         }
 
+
         /* [HttpGet]
          public async Task<IActionResult> DeleteUserUsernamedAsync(string username)
          {
@@ -173,16 +398,20 @@ namespace dms_backend_api.Controllers
          }*/
 
         [HttpPost]
-        public async Task<IActionResult> UpdateUseryIdAsync([FromBody] UpdateUserModelDTO updateRoleModel)
+        public async Task<IActionResult> UpdateUseryIdAsync([FromBody] UpdateUserModelDTO updateUserModel)
         {
             try
             {
-                if (updateRoleModel.Id != Guid.Empty)
+                if (updateUserModel.Id != Guid.Empty)
                 {
-                    var user = _userManager.Users.Where(x => x.Id.Equals(updateRoleModel.Id)).First();
+                    var user = _userManager.Users.Where(x => x.Id.Equals(updateUserModel.Id)).First();
                     if (user != null)
                     {
-                        user = _mapper.Map<ApplicationUser>(updateRoleModel);
+                        user.UserName = updateUserModel.UserName;
+                        user.FirstName = updateUserModel.FirstName;
+                        user.LastName = updateUserModel.LastName;
+
+                        await _userManager.ChangePasswordAsync(user, updateUserModel.OldPassword, updateUserModel.Password);
 
                         var result = await _userManager.UpdateAsync(user);
                         if (result.Succeeded)
@@ -194,12 +423,43 @@ namespace dms_backend_api.Controllers
                             ModelState.AddModelError(string.Empty, error.Description);
                         }
                     }
-                    return NotFound(new BasicResponse() { Message = $"User with id:{updateRoleModel.Id} was not found.", StatusCode = (int)HttpStatusCode.NotFound });
+                    return NotFound(new BasicResponse() { Message = $"User with id:{updateUserModel.Id} was not found.", StatusCode = (int)HttpStatusCode.NotFound });
                 }
             }
             catch (Exception ex)
             {
                 _logger.LogError($"UpdateUseryIdAsync :{ex.Message}");
+                return BadRequest(new BasicResponse() { Message = $"{ex.Message}", StatusCode = (int)HttpStatusCode.BadRequest });
+            }
+            return BadRequest(new BasicResponse() { Message = $"", StatusCode = (int)HttpStatusCode.BadRequest, ErrorResponse = _errorFactory.ModelStateToErrorResponse(ModelState) });
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> ChangeUserPasswordAsync([FromBody] ChangeUserPasswordModelDTO updateUserModel)
+        {
+            try
+            {
+                if (updateUserModel.Id != Guid.Empty)
+                {
+                    var user = _userManager.Users.Where(x => x.Id.Equals(updateUserModel.Id)).First();
+                    if (user != null)
+                    {
+                        var result = await _userManager.ChangePasswordAsync(user, updateUserModel.OldPassword, updateUserModel.Password); ;
+                        if (result.Succeeded)
+                        {
+                            return Ok(new BasicResponse() { Message = $"User sucessfully updated:{user.Id}", StatusCode = (int)HttpStatusCode.OK });
+                        }
+                        foreach (var error in result.Errors)
+                        {
+                            ModelState.AddModelError(string.Empty, error.Description);
+                        }
+                    }
+                    return NotFound(new BasicResponse() { Message = $"User with id:{updateUserModel.Id} was not found.", StatusCode = (int)HttpStatusCode.NotFound });
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"ChangeUserPasswordAsync :{ex.Message}");
                 return BadRequest(new BasicResponse() { Message = $"{ex.Message}", StatusCode = (int)HttpStatusCode.BadRequest });
             }
             return BadRequest(new BasicResponse() { Message = $"", StatusCode = (int)HttpStatusCode.BadRequest, ErrorResponse = _errorFactory.ModelStateToErrorResponse(ModelState) });
@@ -216,7 +476,7 @@ namespace dms_backend_api.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> AddRole([FromBody] AddRoleModelDTO addRoleModel)
+        public async Task<IActionResult> AddRoleAsync([FromBody] AddRoleModelDTO addRoleModel)
         {
             try
             {

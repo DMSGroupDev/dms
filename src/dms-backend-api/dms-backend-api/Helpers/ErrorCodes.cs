@@ -4,7 +4,7 @@
     {
         EmptyOrInvalid = 1,
         NotUnique = 2,
-        NotEnoughtLenght= 3,
+        NotEnoughtLenght = 3,
         NotEqual = 4,
         NotFound = 5,
         LockedOut = 6

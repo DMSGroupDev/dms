@@ -65,6 +65,14 @@ namespace dms_backend_api.Infrastracture
             services.AddTransient<IValidator<AddRoleModelDTO>, AddRoleModelDTOValidator>();
             services.AddTransient<IValidator<UpdateRoleModelDTO>, UpdateRoleModelDTOValidator>();
             services.AddTransient<IValidator<MailModelDTO>, MailModelDTOValidator>();
+            services.AddTransient<IValidator<AddUserModelDTO>, AddUserModelDTOValidator>();
+            services.AddTransient<IValidator<UpdateUserModelDTO>, UpdateUserModelDTOValidator>();
+            services.AddTransient<IValidator<ChangeUserPasswordModelDTO>, ChangeUserPasswordModelDTOValidator>();
+            services.AddTransient<IValidator<ConfirmationEmailModelDTO>, ConfirmationEmailModelDTOValidator>();
+            services.AddTransient<IValidator<ForgetPasswordModelDTO>, ForgetPasswordModelDTOValidator>();
+            services.AddTransient<IValidator<ReConfirmationEmailModelDTO>, ReConfirmationEmailModelDTOValidator>();
+            services.AddTransient<IValidator<ResetPasswordModelDTO>, ResetPasswordModelDTOValidator>();
+
             #endregion
 
             #region Factories
