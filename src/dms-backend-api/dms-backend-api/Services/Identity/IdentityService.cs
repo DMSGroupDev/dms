@@ -12,7 +12,7 @@ namespace dms_backend_api.Services
         private readonly RoleManager<ApplicationRole> _roleManager;
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly SignInManager<ApplicationUser> _signInManager;
-       
+
         #endregion
 
         #region Ctor

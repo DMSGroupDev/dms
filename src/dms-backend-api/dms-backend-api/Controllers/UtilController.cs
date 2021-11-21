@@ -11,7 +11,6 @@ using System.Threading.Tasks;
 namespace dms_backend_api.Controllers
 {
     [ApiController]
-    [Authorize]
     [Route("/api/util/[action]")]
     public partial class UtilController : Controller
     {
@@ -45,7 +44,9 @@ namespace dms_backend_api.Controllers
                 return BadRequest(new BasicResponse() { Message = $"{ex.Message}", StatusCode = (int)HttpStatusCode.BadRequest });
             }
         }
+
         [HttpPost]
+        [Authorize]
         public async Task<IActionResult> SendEmailAsync([FromBody] MailModelDTO emailModel)
         {
             try

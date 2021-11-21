@@ -1,6 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
-
-namespace dms_backend_api.ExternalModel.Identity
+﻿namespace dms_backend_api.ExternalModel.Identity
 {
     public partial class AddRoleModelDTO
     {

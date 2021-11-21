@@ -99,10 +99,10 @@ namespace dms_backend_api.Controllers
                         code = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(code));
 
                         var emailResponse = await _emailSender.SendEmailAsync(emailTo: user, subject: "Confirm your email", htmlMessage: $"Please confirm your account by <a href='" +
-                            $"{HtmlEncoder.Default.Encode(string.Format(registerUserModel.RegistrationCallbackUrl, code))}'>clicking here</a>.");
+                            $"{HtmlEncoder.Default.Encode(string.Format(registerUserModel.RegistrationCallbackUrl, user.Id, code))}'>clicking here</a>.");
 
                         if (emailResponse.StatusCode == (int)HttpStatusCode.OK)
-                            return Ok(new BasicResponse() { Message = $"Confirmation code:{code}", StatusCode = (int)HttpStatusCode.OK });
+                            return Ok(new RegisterReponse() { ConfirmationCode = code, UserId = user.Id.ToString(), Message = $"Confirmation code:{code} ", StatusCode = (int)HttpStatusCode.OK });
                         return Ok(emailResponse);
                     }
                     foreach (var error in result.Errors)
@@ -114,14 +114,14 @@ namespace dms_backend_api.Controllers
             catch (Exception ex)
             {
                 _logger.LogError($"RegisterAsync: {ex.Message}");
-                return BadRequest(new BasicResponse() { Message = $"{ex.Message}", StatusCode = (int)HttpStatusCode.BadRequest });
+                return BadRequest(new RegisterReponse() { Message = $"{ex.Message}", StatusCode = (int)HttpStatusCode.BadRequest });
             }
-            return BadRequest(new BasicResponse() { Message = $"", StatusCode = (int)HttpStatusCode.BadRequest, ErrorResponse = _errorFactory.ModelStateToErrorResponse(ModelState) });
+            return BadRequest(new RegisterReponse() { Message = $"", StatusCode = (int)HttpStatusCode.BadRequest, ErrorResponse = _errorFactory.ModelStateToErrorResponse(ModelState) });
         }
 
         [HttpPost]
         [AllowAnonymous]
-        public async Task<IActionResult> Login([FromBody] LoginUserModelDTO model)
+        public async Task<IActionResult> LoginAsync([FromBody] LoginUserModelDTO model)
         {
             try
             {
@@ -188,7 +188,7 @@ namespace dms_backend_api.Controllers
 
         [HttpGet]
         [Authorize]
-        public async Task<IActionResult> WhoAmI()
+        public async Task<IActionResult> WhoAmIAsync()
         {
 #pragma warning disable CS8602 // Dereference of a possibly null reference.
             if (_httpContextAccessor.HttpContext.User != null)
@@ -203,7 +203,7 @@ namespace dms_backend_api.Controllers
 
         [Authorize]
         [HttpGet]
-        public async Task<IActionResult> Logout()
+        public async Task<IActionResult> LogoutAsync()
         {
             try
             {

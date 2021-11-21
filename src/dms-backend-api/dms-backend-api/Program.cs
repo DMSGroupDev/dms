@@ -24,7 +24,7 @@ namespace dms_backend_api
                     EnviromentVariablesHelper.EnviromentVariablesCheck(config);
 
                     var root = config.Build();
-                    
+
                     config.AddEnvironmentVariables();
 
                     config.AddAzureKeyVault(new SecretClient(new Uri((string)root.GetValue(typeof(string), "KEYVAULT_ENDPOINT")),

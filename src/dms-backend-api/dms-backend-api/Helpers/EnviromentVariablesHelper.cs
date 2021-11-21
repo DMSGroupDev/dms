@@ -11,7 +11,7 @@ namespace dms_backend_api.Helpers
             string? keyVaultEndpoint = Environment.GetEnvironmentVariable("KEYVAULT_ENDPOINT");
             if (keyVaultEndpoint is null)
                 throw new InvalidOperationException("Store the Key Vault endpoint in a KEYVAULT_ENDPOINT environment variable.");
-            
+
             string? jwtValidAudience = Environment.GetEnvironmentVariable("JWT_ValidAudience");
             if (jwtValidAudience is null)
                 throw new InvalidOperationException("Store the JWT ValidAudience in a JWT_ValidAudience environment variable.");

@@ -47,7 +47,7 @@ namespace dms_backend_api.Services.Utils
                 };
 
                 if (!string.IsNullOrEmpty(htmlMessage))
-                    msg.PlainTextContent = htmlMessage;
+                    msg.HtmlContent = htmlMessage;
 
                 if (!string.IsNullOrEmpty(templateId))
                 {
