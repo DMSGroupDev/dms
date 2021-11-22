@@ -85,7 +85,7 @@ namespace dms_backend_api.Controllers
                             new ErrorModel()
                             {
                                 AttemptedValue = confirmationEmailModel.UserId,
-                                ErrorCode = ErrorCodes.NotFound.ToString(),
+                                ErrorCode = (int) ErrorCodes.NotFound,
                                 PropertyName = "UserId",
                                 ErrorMessage = $"Unable to find User with id: {confirmationEmailModel.UserId}"
                             }
@@ -135,7 +135,7 @@ namespace dms_backend_api.Controllers
                             new ErrorModel()
                             {
                                 AttemptedValue = reconfirmationEmailModel.Email,
-                                ErrorCode = ErrorCodes.NotFound.ToString(),
+                                ErrorCode = (int) ErrorCodes.NotFound,
                                 PropertyName = "Email",
                                 ErrorMessage = $"Unable to find User with id: {reconfirmationEmailModel.Email}"
                             }
@@ -180,7 +180,7 @@ namespace dms_backend_api.Controllers
                             new ErrorModel()
                             {
                                 AttemptedValue = forgetPasswordModel.Email,
-                                ErrorCode = ErrorCodes.NotFound.ToString(),
+                                ErrorCode = (int) ErrorCodes.NotFound,
                                 PropertyName = "Email",
                                 ErrorMessage = $"Unable to find User with id: {forgetPasswordModel.Email}"
                             }
@@ -200,7 +200,7 @@ namespace dms_backend_api.Controllers
                             new ErrorModel()
                             {
                                 AttemptedValue = forgetPasswordModel.Email,
-                                ErrorCode = ErrorCodes.EmptyOrInvalid.ToString(),
+                                ErrorCode = (int) ErrorCodes.EmptyOrInvalid,
                                 PropertyName = "Email",
                                 ErrorMessage = $"Unable to valid User with email: {forgetPasswordModel.Email}"
                             }
@@ -247,7 +247,7 @@ namespace dms_backend_api.Controllers
                             new ErrorModel()
                             {
                                 AttemptedValue = forgetPasswordModel.Email,
-                                ErrorCode = ErrorCodes.NotFound.ToString(),
+                                ErrorCode = (int) ErrorCodes.NotFound,
                                 PropertyName = "Email",
                                 ErrorMessage = $"Unable to find User with id: {forgetPasswordModel.Email}"
                             }
@@ -296,7 +296,7 @@ namespace dms_backend_api.Controllers
                     if (result.Succeeded)
                     {
                         var user = _userManager.Users.Where(x => x.Email == addUserModel.Email).FirstOrDefault();
-                        if (user != null)
+                        if (user is not null)
                             return Ok(new BasicResponse() { Message = $"User sucessfully created:{ user.Id}", StatusCode = (int)HttpStatusCode.OK });
 
                         return NotFound(new BasicResponse() { Message = $"User not found :{ addUserModel.Email}", StatusCode = (int)HttpStatusCode.NotFound });
@@ -323,7 +323,7 @@ namespace dms_backend_api.Controllers
                 if (Id != Guid.Empty)
                 {
                     var role = _userManager.Users.Where(x => x.Id.Equals(Id)).First();
-                    if (role != null)
+                    if (role is not null)
                         return Ok(role);
                     return NotFound(new BasicResponse() { Message = $"User with id:{Id} was not found.", StatusCode = (int)HttpStatusCode.NotFound });
                 }
@@ -344,7 +344,7 @@ namespace dms_backend_api.Controllers
                 if (Id != Guid.Empty)
                 {
                     var user = _userManager.Users.Where(x => x.Id.Equals(Id)).First();
-                    if (user != null)
+                    if (user is not null)
                     {
                         var result = await _userManager.DeleteAsync(user);
                         if (result.Succeeded)
@@ -405,7 +405,7 @@ namespace dms_backend_api.Controllers
                 if (updateUserModel.Id != Guid.Empty)
                 {
                     var user = _userManager.Users.Where(x => x.Id.Equals(updateUserModel.Id)).First();
-                    if (user != null)
+                    if (user is not null)
                     {
                         user.UserName = updateUserModel.UserName;
                         user.FirstName = updateUserModel.FirstName;
@@ -442,7 +442,7 @@ namespace dms_backend_api.Controllers
                 if (updateUserModel.Id != Guid.Empty)
                 {
                     var user = _userManager.Users.Where(x => x.Id.Equals(updateUserModel.Id)).First();
-                    if (user != null)
+                    if (user is not null)
                     {
                         var result = await _userManager.ChangePasswordAsync(user, updateUserModel.OldPassword, updateUserModel.Password); ;
                         if (result.Succeeded)
@@ -524,7 +524,7 @@ namespace dms_backend_api.Controllers
                 if (Id != Guid.Empty)
                 {
                     var role = _roleManager.Roles.Where(x => x.Id.Equals(Id)).First();
-                    if (role != null)
+                    if (role is not null)
                         return Ok(role);
                     return NotFound(new BasicResponse() { Message = $"Role with id:{Id} was not found.", StatusCode = (int)HttpStatusCode.NotFound });
                 }
@@ -545,7 +545,7 @@ namespace dms_backend_api.Controllers
                 if (Id != Guid.Empty)
                 {
                     var role = _roleManager.Roles.Where(x => x.Id.Equals(Id)).First();
-                    if (role != null)
+                    if (role is not null)
                     {
                         var result = await _roleManager.DeleteAsync(role);
                         if (result.Succeeded)
@@ -576,7 +576,7 @@ namespace dms_backend_api.Controllers
                 if (updateRoleModel.Id != Guid.Empty)
                 {
                     var role = _roleManager.Roles.Where(x => x.Id.Equals(updateRoleModel.Id)).First();
-                    if (role != null)
+                    if (role is not null)
                     {
                         role.Name = updateRoleModel.Name;
                         role.NormalizedName = updateRoleModel.NormalizedName;

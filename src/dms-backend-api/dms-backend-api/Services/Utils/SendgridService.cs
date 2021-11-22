@@ -55,7 +55,7 @@ namespace dms_backend_api.Services.Utils
                     msg.SetTemplateData(templateData);
                 }
 
-                if (attachments != null)
+                if (attachments is not null)
                     if (attachments.Count > 0)
                         msg.AddAttachments(attachments);
 
