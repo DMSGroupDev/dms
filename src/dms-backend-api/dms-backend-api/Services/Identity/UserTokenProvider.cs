@@ -24,7 +24,7 @@ namespace dms_backend_api.Services.Identity
         #region Methods
         public Task<bool> CanGenerateTwoFactorTokenAsync(UserManager<TUser> manager, TUser user)
         {
-            if (manager != null && user != null)
+            if (manager is not null && user is not null)
                 return Task.FromResult(true);
             return Task.FromResult(false);
         }

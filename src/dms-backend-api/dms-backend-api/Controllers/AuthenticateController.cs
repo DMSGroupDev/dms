@@ -3,6 +3,7 @@ using dms_backend_api.Domain.Identity;
 using dms_backend_api.ExternalModel.Authenticate;
 using dms_backend_api.Factories;
 using dms_backend_api.Helpers;
+using dms_backend_api.Model;
 using dms_backend_api.Response;
 using dms_backend_api.Response.Identity;
 using dms_backend_api.Services.Identity;
@@ -128,53 +129,63 @@ namespace dms_backend_api.Controllers
                 if (ModelState.IsValid)
                 {
                     var user = !string.IsNullOrEmpty(model.Email) ? await _userManager.FindByEmailAsync(model.Email) : await _userManager.FindByNameAsync(model.Username);
-                    if (user != null)
-                    {
-                        var result = await _signInManager.PasswordSignInAsync(user.UserName, model.Password, false, lockoutOnFailure: false);
-                        if (result.Succeeded)
-                        {
-#pragma warning disable CS8602 // Dereference of a possibly null reference.
-                            if (_httpContextAccessor.HttpContext.User != null)
-                            {
-#pragma warning restore CS8602 // Dereference of a possibly null reference.
-                                return Ok(new LoginResponse()
-                                {
-                                    ApplicationUser = user,
-                                    Token = _tokenService.GenerateToken(user, (await _userManager.GetRolesAsync(user)).ToList()),
-                                    Message = $"User sucessfully logged.",
-                                    StatusCode = (int)HttpStatusCode.OK,
-                                    ApplicationRoles = (await _userManager.GetRolesAsync(user)).ToList()
-                                });
-                            }
 
+                    if (user is null)
+                        return Ok(new LoginResponse()
+                        {
+                            Message = $"User account don't exist.",
+                            StatusCode = (int)HttpStatusCode.ExpectationFailed,
+                            ErrorResponse = new ErrorResponse()
+                            {
+                                Errors = new List<Model.ErrorModel>
+                                      { new Model.ErrorModel() { AttemptedValue = !string.IsNullOrEmpty(model.Email) ? model.Email : model.Username, ErrorCode = (int) ErrorCodes.NotFound, ErrorMessage = "User account don't exist." }}
+                            }
+                        });
+
+                    var result = await _signInManager.PasswordSignInAsync(user.UserName, model.Password, false, lockoutOnFailure: false);
+                    if (result.Succeeded)
+                    {
+#pragma warning disable CS8602 // Dereference of a possibly null reference.
+                        if (_httpContextAccessor.HttpContext.User is not null)
+                        {
+#pragma warning restore CS8602 // Dereference of a possibly null reference.
                             return Ok(new LoginResponse()
                             {
-                                Message = $"User account don't exist.",
-                                StatusCode = (int)HttpStatusCode.ExpectationFailed,
-                                ErrorResponse = new ErrorResponse()
-                                {
-                                    Errors = new List<Model.ErrorModel>
-                                      { new Model.ErrorModel() { AttemptedValue = !string.IsNullOrEmpty(model.Email) ? model.Email : model.Username, ErrorCode = ErrorCodes.NotFound.ToString(), ErrorMessage = "User account don't exist." }}
-                                }
+                                ApplicationUser = user,
+                                Token = _tokenService.GenerateToken(user, (await _userManager.GetRolesAsync(user)).ToList()),
+                                Message = $"User sucessfully logged.",
+                                StatusCode = (int)HttpStatusCode.OK,
+                                ApplicationRoles = (await _userManager.GetRolesAsync(user)).ToList()
                             });
                         }
-                        if (result.IsLockedOut)
+
+                        return Ok(new LoginResponse()
                         {
-                            return Ok(new LoginResponse()
+                            Message = $"User account don't exist.",
+                            StatusCode = (int)HttpStatusCode.ExpectationFailed,
+                            ErrorResponse = new ErrorResponse()
                             {
-                                Message = $"User account locked out.",
-                                StatusCode = (int)HttpStatusCode.ExpectationFailed,
-                                ErrorResponse = new ErrorResponse()
-                                {
-                                    Errors = new List<Model.ErrorModel>
-                                      { new Model.ErrorModel() { AttemptedValue = !string.IsNullOrEmpty(model.Email) ? model.Email : model.Username, ErrorCode = ErrorCodes.LockedOut.ToString(), ErrorMessage = "User account locked out." }}
-                                }
-                            });
-                        }
-                        else
+                                Errors = new List<Model.ErrorModel>
+                                      { new Model.ErrorModel() { AttemptedValue = !string.IsNullOrEmpty(model.Email) ? model.Email : model.Username, ErrorCode = (int) ErrorCodes.NotFound, ErrorMessage = "User account don't exist." }}
+                            }
+                        });
+                    }
+                    if (result.IsLockedOut)
+                    {
+                        return Ok(new LoginResponse()
                         {
-                            ModelState.AddModelError(string.Empty, "Invalid login attempt.");
-                        }
+                            Message = $"User account locked out.",
+                            StatusCode = (int)HttpStatusCode.ExpectationFailed,
+                            ErrorResponse = new ErrorResponse()
+                            {
+                                Errors = new List<Model.ErrorModel>
+                                      { new Model.ErrorModel() { AttemptedValue = !string.IsNullOrEmpty(model.Email) ? model.Email : model.Username, ErrorCode =(int)  ErrorCodes.LockedOut, ErrorMessage = "User account locked out." }}
+                            }
+                        });
+                    }
+                    else
+                    {
+                        ModelState.AddModelError(string.Empty, "Invalid login attempt.");
                     }
                 }
             }
@@ -191,7 +202,7 @@ namespace dms_backend_api.Controllers
         public async Task<IActionResult> WhoAmIAsync()
         {
 #pragma warning disable CS8602 // Dereference of a possibly null reference.
-            if (_httpContextAccessor.HttpContext.User != null)
+            if (_httpContextAccessor.HttpContext.User is not null)
             {
 #pragma warning restore CS8602 // Dereference of a possibly null reference.
                 var user = await _userManager.GetUserAsync(_httpContextAccessor.HttpContext.User);

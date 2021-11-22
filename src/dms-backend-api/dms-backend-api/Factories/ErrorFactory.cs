@@ -29,7 +29,7 @@ namespace dms_backend_api.Factories
 
                 foreach (var error in errorInModelState)
                 {
-                    if (error.Value != null)
+                    if (error.Value is not null)
                         foreach (var errorMessage in error.Value)
                             errorResponse.Errors.Add(new ErrorModel() { PropertyName = error.Key, ErrorMessage = errorMessage });
                 }
