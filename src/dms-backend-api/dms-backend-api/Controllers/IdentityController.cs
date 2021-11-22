@@ -22,12 +22,12 @@ using System.Threading.Tasks;
 
 namespace dms_backend_api.Controllers
 {
-    [Authorize]
     [ApiController]
     [Route("/api/identity/[action]")]
     public partial class IdentityController : ControllerBase
     {
         #region Fields
+
         private readonly IIdentityService _identityService;
         private readonly ILogger<IdentityController> _logger;
         private readonly RoleManager<ApplicationRole> _roleManager;
@@ -38,9 +38,11 @@ namespace dms_backend_api.Controllers
         private readonly ITokenService _tokenService;
         private readonly IEmailSender _emailSender;
         private readonly IErrorFactory _errorFactory;
+
         #endregion
 
         #region Ctor
+
         public IdentityController(IIdentityService identityService,
                                       ILogger<IdentityController> logger,
                                       IHttpContextAccessor httpContextAccessor,
@@ -60,6 +62,7 @@ namespace dms_backend_api.Controllers
             _emailSender = emailSender;
             _errorFactory = errorFactory;
         }
+
         #endregion
 
         #region Methods
@@ -115,7 +118,6 @@ namespace dms_backend_api.Controllers
 
             return BadRequest(new BasicResponse() { Message = $"", StatusCode = (int)HttpStatusCode.BadRequest, ErrorResponse = _errorFactory.ModelStateToErrorResponse(ModelState) });
         }
-
         [HttpPost]
         public async Task<IActionResult> ReConfirmEmailAsync(ReConfirmationEmailModelDTO reconfirmationEmailModel)
         {
@@ -160,7 +162,6 @@ namespace dms_backend_api.Controllers
             }
             return BadRequest(new BasicResponse() { Message = $"", StatusCode = (int)HttpStatusCode.BadRequest, ErrorResponse = _errorFactory.ModelStateToErrorResponse(ModelState) });
         }
-
         [HttpPost]
         public async Task<IActionResult> ForgetPasswordAsync(ForgetPasswordModelDTO forgetPasswordModel)
         {
@@ -227,7 +228,6 @@ namespace dms_backend_api.Controllers
             }
             return BadRequest(new BasicResponse() { Message = $"", StatusCode = (int)HttpStatusCode.BadRequest, ErrorResponse = _errorFactory.ModelStateToErrorResponse(ModelState) });
         }
-
         [HttpPost]
         public async Task<IActionResult> ResetPasswordAsync(ResetPasswordModelDTO forgetPasswordModel)
         {
@@ -284,6 +284,7 @@ namespace dms_backend_api.Controllers
 
         #region Users
 
+        [Authorize]
         [HttpPost]
         public async Task<IActionResult> AddUser([FromBody] AddUserModelDTO addUserModel)
         {
@@ -315,6 +316,7 @@ namespace dms_backend_api.Controllers
             return BadRequest(new BasicResponse() { Message = $"", StatusCode = (int)HttpStatusCode.ExpectationFailed });
         }
 
+        [Authorize]
         [HttpGet]
         public IActionResult GetUserById(Guid Id)
         {
@@ -336,6 +338,7 @@ namespace dms_backend_api.Controllers
             return BadRequest(new BasicResponse() { Message = $"", StatusCode = (int)HttpStatusCode.BadRequest, ErrorResponse = _errorFactory.ModelStateToErrorResponse(ModelState) });
         }
 
+        [Authorize]
         [HttpGet]
         public async Task<IActionResult> DeleteUserByIdAsync(Guid Id)
         {
@@ -367,7 +370,6 @@ namespace dms_backend_api.Controllers
             return BadRequest(new BasicResponse() { Message = $"", StatusCode = (int)HttpStatusCode.BadRequest, ErrorResponse = _errorFactory.ModelStateToErrorResponse(ModelState) });
         }
 
-
         /* [HttpGet]
          public async Task<IActionResult> DeleteUserUsernamedAsync(string username)
          {
@@ -397,6 +399,7 @@ namespace dms_backend_api.Controllers
              }
          }*/
 
+        [Authorize]
         [HttpPost]
         public async Task<IActionResult> UpdateUseryIdAsync([FromBody] UpdateUserModelDTO updateUserModel)
         {
@@ -434,6 +437,7 @@ namespace dms_backend_api.Controllers
             return BadRequest(new BasicResponse() { Message = $"", StatusCode = (int)HttpStatusCode.BadRequest, ErrorResponse = _errorFactory.ModelStateToErrorResponse(ModelState) });
         }
 
+        [Authorize]
         [HttpPost]
         public async Task<IActionResult> ChangeUserPasswordAsync([FromBody] ChangeUserPasswordModelDTO updateUserModel)
         {
@@ -475,6 +479,7 @@ namespace dms_backend_api.Controllers
             return "Echo";
         }
 
+        [Authorize]
         [HttpPost]
         public async Task<IActionResult> AddRoleAsync([FromBody] AddRoleModelDTO addRoleModel)
         {
@@ -502,6 +507,7 @@ namespace dms_backend_api.Controllers
             return BadRequest(new BasicResponse() { Message = $"", StatusCode = (int)HttpStatusCode.BadRequest, ErrorResponse = _errorFactory.ModelStateToErrorResponse(ModelState) });
         }
 
+        [Authorize]
         [HttpGet]
         public IActionResult GetAllRoles()
         {
@@ -516,6 +522,7 @@ namespace dms_backend_api.Controllers
             }
         }
 
+        [Authorize]
         [HttpGet]
         public IActionResult GetRoleById(Guid Id)
         {
@@ -537,6 +544,7 @@ namespace dms_backend_api.Controllers
             return BadRequest(new BasicResponse() { Message = $"", StatusCode = (int)HttpStatusCode.BadRequest, ErrorResponse = _errorFactory.ModelStateToErrorResponse(ModelState) });
         }
 
+        [Authorize]
         [HttpGet]
         public async Task<IActionResult> DeleteRoleByIdAsync(Guid Id)
         {
@@ -568,6 +576,7 @@ namespace dms_backend_api.Controllers
             return BadRequest(new BasicResponse() { Message = $"", StatusCode = (int)HttpStatusCode.BadRequest, ErrorResponse = _errorFactory.ModelStateToErrorResponse(ModelState) });
         }
 
+        [Authorize]
         [HttpPost]
         public async Task<IActionResult> UpdateRoleByIdAsync([FromBody] UpdateRoleModelDTO updateRoleModel)
         {
@@ -601,6 +610,7 @@ namespace dms_backend_api.Controllers
             }
             return BadRequest(new BasicResponse() { Message = $"", StatusCode = (int)HttpStatusCode.BadRequest, ErrorResponse = _errorFactory.ModelStateToErrorResponse(ModelState) });
         }
+
         #endregion
 
         #endregion
