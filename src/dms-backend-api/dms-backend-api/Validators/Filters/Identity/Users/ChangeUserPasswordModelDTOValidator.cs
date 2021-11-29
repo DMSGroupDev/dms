@@ -1,7 +1,7 @@
 ﻿using dms_backend_api.Helpers;
 using FluentValidation;
 
-namespace dms_backend_api.ExternalModel.Identity
+namespace dms_backend_api.ExternalModel.Identity.Users
 {
     public partial class ChangeUserPasswordModelDTOValidator : AbstractValidator<ChangeUserPasswordModelDTO>
     {

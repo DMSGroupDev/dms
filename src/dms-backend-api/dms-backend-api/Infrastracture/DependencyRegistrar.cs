@@ -3,6 +3,8 @@ using AutoMapper.Data;
 using dms_backend_api.Domain.Identity;
 using dms_backend_api.ExternalModel.Authenticate;
 using dms_backend_api.ExternalModel.Identity;
+using dms_backend_api.ExternalModel.Identity.Roles;
+using dms_backend_api.ExternalModel.Identity.Users;
 using dms_backend_api.ExternalModel.Util;
 using dms_backend_api.Factories;
 using dms_backend_api.Mapping;
@@ -12,6 +14,7 @@ using dms_backend_api.Services.Utils;
 using dms_backend_api.Validators;
 using dms_backend_api.Validators.Filters;
 using dms_backend_api.Validators.Filters.Identity;
+using dms_backend_api.Validators.Filters.Identity.Domain;
 using dms_backend_api.Validators.Filters.Util;
 using FluentValidation;
 using FluentValidation.AspNetCore;
@@ -72,7 +75,11 @@ namespace dms_backend_api.Infrastracture
             services.AddTransient<IValidator<ForgetPasswordModelDTO>, ForgetPasswordModelDTOValidator>();
             services.AddTransient<IValidator<ReConfirmationEmailModelDTO>, ReConfirmationEmailModelDTOValidator>();
             services.AddTransient<IValidator<ResetPasswordModelDTO>, ResetPasswordModelDTOValidator>();
-
+            services.AddTransient<IValidator<ValidateForgetPasswordModelDTO>, ValidateForgetPasswordModelDTOValidator>();
+            services.AddTransient<IValidator<ValidateRegisterDomainModelDTO>, ValidateRegisterDomainModelDTOValidator>();
+            services.AddTransient<IValidator<RegisterDomainModelDTO>, RegisterDomainModelDTOValidator>();
+            services.AddTransient<IValidator<InviteToDomainModelDTO>, InviteToDomainModelDTOValidator>();
+            services.AddTransient<IValidator<AddToDomainModelDTO>, AddToDomainModelDTOValidator>();
             #endregion
 
             #region Factories

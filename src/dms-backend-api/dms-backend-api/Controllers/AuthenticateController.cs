@@ -3,7 +3,6 @@ using dms_backend_api.Domain.Identity;
 using dms_backend_api.ExternalModel.Authenticate;
 using dms_backend_api.Factories;
 using dms_backend_api.Helpers;
-using dms_backend_api.Model;
 using dms_backend_api.Response;
 using dms_backend_api.Response.Identity;
 using dms_backend_api.Services.Identity;
@@ -13,6 +12,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.Logging;
+using Swashbuckle.AspNetCore.Annotations;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -25,12 +25,12 @@ namespace dms_backend_api.Controllers
 {
     [ApiController]
     [Route("/api/authenticate/[action]")]
+    [Produces("application/json")]
+    [SwaggerResponse((int)HttpStatusCode.OK, Type = typeof(BasicResponse))]
     public partial class AuthenticateController : Controller
     {
         #region Fields
-        private readonly IIdentityService _identityService;
         private readonly ILogger<AuthenticateController> _logger;
-        private readonly RoleManager<ApplicationRole> _roleManager;
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly SignInManager<ApplicationUser> _signInManager;
         private readonly IHttpContextAccessor _httpContextAccessor;
@@ -49,11 +49,9 @@ namespace dms_backend_api.Controllers
                                       IEmailSender emailSender,
                                       IErrorFactory errorFactory)
         {
-            _identityService = identityService;
             _logger = logger;
             _signInManager = identityService.GetSignInManager();
             _userManager = identityService.GetUserManager();
-            _roleManager = identityService.GetRoleManager();
             _httpContextAccessor = httpContextAccessor;
             _mapper = mapper;
             _tokenService = tokenService;
@@ -84,6 +82,7 @@ namespace dms_backend_api.Controllers
 
         [HttpPost]
         [AllowAnonymous]
+        [SwaggerResponse((int)HttpStatusCode.OK, Type = typeof(RegisterReponse))]
         public async Task<IActionResult> RegisterAsync([FromBody] RegisterUserModelDTO registerUserModel)
         {
             try
@@ -122,6 +121,7 @@ namespace dms_backend_api.Controllers
 
         [HttpPost]
         [AllowAnonymous]
+        [SwaggerResponse((int)HttpStatusCode.OK, Type = typeof(LoginResponse))]
         public async Task<IActionResult> LoginAsync([FromBody] LoginUserModelDTO model)
         {
             try
@@ -185,7 +185,16 @@ namespace dms_backend_api.Controllers
                     }
                     else
                     {
-                        ModelState.AddModelError(string.Empty, "Invalid login attempt.");
+                        return Ok(new LoginResponse()
+                        {
+                            Message = $"Invalid login attempt.",
+                            StatusCode = (int)HttpStatusCode.ExpectationFailed,
+                            ErrorResponse = new ErrorResponse()
+                            {
+                                Errors = new List<Model.ErrorModel>
+                                      { new Model.ErrorModel() { AttemptedValue = !string.IsNullOrEmpty(model.Email) ? model.Email : model.Username, ErrorCode =(int)  ErrorCodes.NotEqual, ErrorMessage = "Invalid login attempt." }}
+                            }
+                        });
                     }
                 }
             }
@@ -199,6 +208,7 @@ namespace dms_backend_api.Controllers
 
         [HttpGet]
         [Authorize]
+        [SwaggerResponse((int)HttpStatusCode.OK)]
         public async Task<IActionResult> WhoAmIAsync()
         {
 #pragma warning disable CS8602 // Dereference of a possibly null reference.

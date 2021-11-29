@@ -7,11 +7,11 @@ using dms_backend_api.Model;
 using dms_backend_api.Response;
 using dms_backend_api.Services.Identity;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.Logging;
+using Swashbuckle.AspNetCore.Annotations;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -24,20 +24,19 @@ namespace dms_backend_api.Controllers
 {
     [ApiController]
     [Route("/api/identity/[action]")]
+    [Produces("application/json")]
+    [SwaggerResponse((int)HttpStatusCode.OK, Type = typeof(BasicResponse))]
     public partial class IdentityController : ControllerBase
     {
         #region Fields
 
-        private readonly IIdentityService _identityService;
         private readonly ILogger<IdentityController> _logger;
         private readonly RoleManager<ApplicationRole> _roleManager;
         private readonly UserManager<ApplicationUser> _userManager;
-        private readonly SignInManager<ApplicationUser> _signInManager;
-        private readonly IHttpContextAccessor _httpContextAccessor;
         private readonly IMapper _mapper;
-        private readonly ITokenService _tokenService;
         private readonly IEmailSender _emailSender;
         private readonly IErrorFactory _errorFactory;
+        private readonly IUserTwoFactorTokenProvider<ApplicationUser> _tokenProvider;
 
         #endregion
 
@@ -45,22 +44,18 @@ namespace dms_backend_api.Controllers
 
         public IdentityController(IIdentityService identityService,
                                       ILogger<IdentityController> logger,
-                                      IHttpContextAccessor httpContextAccessor,
                                       IMapper mapper,
-                                      ITokenService tokenService,
                                       IEmailSender emailSender,
-                                      IErrorFactory errorFactory)
+                                      IErrorFactory errorFactory,
+                                      IUserTwoFactorTokenProvider<ApplicationUser> tokenProvider)
         {
-            _identityService = identityService;
             _logger = logger;
-            _signInManager = identityService.GetSignInManager();
             _userManager = identityService.GetUserManager();
             _roleManager = identityService.GetRoleManager();
-            _httpContextAccessor = httpContextAccessor;
             _mapper = mapper;
-            _tokenService = tokenService;
             _emailSender = emailSender;
             _errorFactory = errorFactory;
+            _tokenProvider = tokenProvider;
         }
 
         #endregion
@@ -70,6 +65,7 @@ namespace dms_backend_api.Controllers
         #region UserIdentityFunctions
 
         [HttpPost]
+        [SwaggerOperation(Tags = new[] { "Identity - User Functions" })]
         public async Task<IActionResult> ConfirmEmailAsync(ConfirmationEmailModelDTO confirmationEmailModel)
         {
             try
@@ -119,6 +115,7 @@ namespace dms_backend_api.Controllers
             return BadRequest(new BasicResponse() { Message = $"", StatusCode = (int)HttpStatusCode.BadRequest, ErrorResponse = _errorFactory.ModelStateToErrorResponse(ModelState) });
         }
         [HttpPost]
+        [SwaggerOperation(Tags = new[] { "Identity - User Functions" })]
         public async Task<IActionResult> ReConfirmEmailAsync(ReConfirmationEmailModelDTO reconfirmationEmailModel)
         {
             try
@@ -162,7 +159,10 @@ namespace dms_backend_api.Controllers
             }
             return BadRequest(new BasicResponse() { Message = $"", StatusCode = (int)HttpStatusCode.BadRequest, ErrorResponse = _errorFactory.ModelStateToErrorResponse(ModelState) });
         }
+
+
         [HttpPost]
+        [SwaggerOperation(Tags = new[] { "Identity - User Functions" })]
         public async Task<IActionResult> ForgetPasswordAsync(ForgetPasswordModelDTO forgetPasswordModel)
         {
             try
@@ -201,7 +201,7 @@ namespace dms_backend_api.Controllers
                             new ErrorModel()
                             {
                                 AttemptedValue = forgetPasswordModel.Email,
-                                ErrorCode = (int) ErrorCodes.EmptyOrInvalid,
+                                ErrorCode = (int) ErrorCodes.AlreadyConfirmed,
                                 PropertyName = "Email",
                                 ErrorMessage = $"Unable to valid User with email: {forgetPasswordModel.Email}"
                             }
@@ -213,7 +213,7 @@ namespace dms_backend_api.Controllers
                     code = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(code));
 
                     var emailResponse = await _emailSender.SendEmailAsync(emailTo: user, subject: "Reset Password", htmlMessage: $"Please reset your password by <a href='" +
-                        $"{HtmlEncoder.Default.Encode(string.Format(forgetPasswordModel.RegistrationCallbackUrl, user.Id, code))}'>clicking here</a>.");
+                        $"{HtmlEncoder.Default.Encode(string.Format(forgetPasswordModel.ForgetPasswordCallbackUrl, user.Id, code))}'>clicking here</a>.");
 
                     if (emailResponse.StatusCode == (int)HttpStatusCode.OK)
                         return Ok(new ForgetPasswordResponse() { ResetCode = code, Message = $"Reset code:{code} ", StatusCode = (int)HttpStatusCode.OK });
@@ -229,33 +229,59 @@ namespace dms_backend_api.Controllers
             return BadRequest(new BasicResponse() { Message = $"", StatusCode = (int)HttpStatusCode.BadRequest, ErrorResponse = _errorFactory.ModelStateToErrorResponse(ModelState) });
         }
         [HttpPost]
-        public async Task<IActionResult> ResetPasswordAsync(ResetPasswordModelDTO forgetPasswordModel)
+        [SwaggerOperation(Tags = new[] { "Identity - User Functions" })]
+        public async Task<IActionResult> ValidateForgetPasswordAsync(ValidateForgetPasswordModelDTO validateForgetPasswordModel)
         {
             try
             {
                 if (ModelState.IsValid)
                 {
-                    var user = await _userManager.FindByEmailAsync(forgetPasswordModel.Email);
+                    var user = await _userManager.FindByIdAsync(validateForgetPasswordModel.UserId.ToString());
+                    if (user is not null)
+                    {
+                        if (await _tokenProvider.ValidateAsync("ResetPassword", System.Text.Encoding.Default.GetString(WebEncoders.Base64UrlDecode(validateForgetPasswordModel.Code)), _userManager, user))
+                            return Ok(new BasicResponse() { Message = $"Combination is valid", StatusCode = (int)HttpStatusCode.OK });
+                        else
+                            return BadRequest(new BasicResponse() { Message = $"Validation failed", StatusCode = (int)HttpStatusCode.BadRequest });
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"ValidateForgetPassword: {ex.Message}");
+                return BadRequest(new BasicResponse() { Message = $"{ex.Message}", StatusCode = (int)HttpStatusCode.BadRequest });
+            }
+            return BadRequest(new BasicResponse() { Message = $"", StatusCode = (int)HttpStatusCode.BadRequest, ErrorResponse = _errorFactory.ModelStateToErrorResponse(ModelState) });
+        }
+        [HttpPost]
+        [SwaggerOperation(Tags = new[] { "Identity - User Functions" })]
+        public async Task<IActionResult> ResetPasswordAsync(ResetPasswordModelDTO resetPasswordModel)
+        {
+            try
+            {
+                if (ModelState.IsValid)
+                {
+                    var user = await _userManager.FindByIdAsync(resetPasswordModel.UserId.ToString());
                     if (user is null)
                         return NotFound(new BasicResponse()
                         {
-                            Message = $"Unable to find User with email  : {forgetPasswordModel.Email}",
+                            Message = $"Unable to find User with id : {resetPasswordModel.UserId}",
                             StatusCode = (int)HttpStatusCode.NotFound,
                             ErrorResponse = new ErrorResponse()
                             {
                                 Errors = new List<ErrorModel> {
                             new ErrorModel()
                             {
-                                AttemptedValue = forgetPasswordModel.Email,
+                                AttemptedValue = resetPasswordModel.UserId.ToString(),
                                 ErrorCode = (int) ErrorCodes.NotFound,
-                                PropertyName = "Email",
-                                ErrorMessage = $"Unable to find User with id: {forgetPasswordModel.Email}"
+                                PropertyName = "UserId",
+                                ErrorMessage = $"Unable to find User with id: {resetPasswordModel.UserId}"
                             }
                             }
                             }
                         });
 
-                    var result = await _userManager.ResetPasswordAsync(user, forgetPasswordModel.Code, forgetPasswordModel.Password);
+                    var result = await _userManager.ResetPasswordAsync(user, resetPasswordModel.Code, resetPasswordModel.Password);
 
                     if (result.Succeeded)
                     {
@@ -286,6 +312,7 @@ namespace dms_backend_api.Controllers
 
         [Authorize]
         [HttpPost]
+        [SwaggerOperation(Tags = new[] { "Identity - Users" })]
         public async Task<IActionResult> AddUser([FromBody] AddUserModelDTO addUserModel)
         {
             try
@@ -318,6 +345,7 @@ namespace dms_backend_api.Controllers
 
         [Authorize]
         [HttpGet]
+        [SwaggerOperation(Tags = new[] { "Identity - Users" })]
         public IActionResult GetUserById(Guid Id)
         {
             try
@@ -340,6 +368,7 @@ namespace dms_backend_api.Controllers
 
         [Authorize]
         [HttpGet]
+        [SwaggerOperation(Tags = new[] { "Identity - Users" })]
         public async Task<IActionResult> DeleteUserByIdAsync(Guid Id)
         {
             try
@@ -401,6 +430,7 @@ namespace dms_backend_api.Controllers
 
         [Authorize]
         [HttpPost]
+        [SwaggerOperation(Tags = new[] { "Identity - Users" })]
         public async Task<IActionResult> UpdateUseryIdAsync([FromBody] UpdateUserModelDTO updateUserModel)
         {
             try
@@ -439,6 +469,7 @@ namespace dms_backend_api.Controllers
 
         [Authorize]
         [HttpPost]
+        [SwaggerOperation(Tags = new[] { "Identity - Users" })]
         public async Task<IActionResult> ChangeUserPasswordAsync([FromBody] ChangeUserPasswordModelDTO updateUserModel)
         {
             try
@@ -481,6 +512,7 @@ namespace dms_backend_api.Controllers
 
         [Authorize]
         [HttpPost]
+        [SwaggerOperation(Tags = new[] { "Identity - Roles" })]
         public async Task<IActionResult> AddRoleAsync([FromBody] AddRoleModelDTO addRoleModel)
         {
             try
@@ -509,6 +541,7 @@ namespace dms_backend_api.Controllers
 
         [Authorize]
         [HttpGet]
+        [SwaggerOperation(Tags = new[] { "Identity - Roles" })]
         public IActionResult GetAllRoles()
         {
             try
@@ -524,6 +557,7 @@ namespace dms_backend_api.Controllers
 
         [Authorize]
         [HttpGet]
+        [SwaggerOperation(Tags = new[] { "Identity - Roles" })]
         public IActionResult GetRoleById(Guid Id)
         {
             try
@@ -546,6 +580,7 @@ namespace dms_backend_api.Controllers
 
         [Authorize]
         [HttpGet]
+        [SwaggerOperation(Tags = new[] { "Identity - Roles" })]
         public async Task<IActionResult> DeleteRoleByIdAsync(Guid Id)
         {
             try
@@ -578,6 +613,7 @@ namespace dms_backend_api.Controllers
 
         [Authorize]
         [HttpPost]
+        [SwaggerOperation(Tags = new[] { "Identity - Roles" })]
         public async Task<IActionResult> UpdateRoleByIdAsync([FromBody] UpdateRoleModelDTO updateRoleModel)
         {
             try
@@ -611,6 +647,86 @@ namespace dms_backend_api.Controllers
             return BadRequest(new BasicResponse() { Message = $"", StatusCode = (int)HttpStatusCode.BadRequest, ErrorResponse = _errorFactory.ModelStateToErrorResponse(ModelState) });
         }
 
+        #endregion
+
+        #region Domain
+
+        [HttpPost]
+        [SwaggerOperation(Tags = new[] { "Identity - Domain" })]
+        public IActionResult ValidationRegisterDomainAsync(ValidateRegisterDomainModelDTO validateRegisterDomainModel)
+        {
+            try
+            {
+                if (ModelState.IsValid)
+                {
+                    /*Validation*/
+                    return Ok();
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"ValidationRegisterDomainAsync: {ex.Message}");
+                return BadRequest(new BasicResponse() { Message = $"{ex.Message}", StatusCode = (int)HttpStatusCode.BadRequest });
+            }
+            return BadRequest(new BasicResponse() { Message = $"", StatusCode = (int)HttpStatusCode.BadRequest, ErrorResponse = _errorFactory.ModelStateToErrorResponse(ModelState) });
+        }
+
+        [HttpPost]
+        [SwaggerOperation(Tags = new[] { "Identity - Domain" })]
+        public IActionResult RegisterDomain(RegisterDomainModelDTO registerDomainModel)
+        {
+            try
+            {
+                if (ModelState.IsValid)
+                {
+                    return Ok();
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"RegisterDomain: {ex.Message}");
+                return BadRequest(new BasicResponse() { Message = $"{ex.Message}", StatusCode = (int)HttpStatusCode.BadRequest });
+            }
+            return BadRequest(new BasicResponse() { Message = $"", StatusCode = (int)HttpStatusCode.BadRequest, ErrorResponse = _errorFactory.ModelStateToErrorResponse(ModelState) });
+        }
+
+        [HttpPost]
+        [SwaggerOperation(Tags = new[] { "Identity - Domain" })]
+        public IActionResult InviteUserToDomain(InviteToDomainModelDTO inviteToDomainModel)
+        {
+            try
+            {
+                if (ModelState.IsValid)
+                {
+                    return Ok();
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"InviteUserToDomain: {ex.Message}");
+                return BadRequest(new BasicResponse() { Message = $"{ex.Message}", StatusCode = (int)HttpStatusCode.BadRequest });
+            }
+            return BadRequest(new BasicResponse() { Message = $"", StatusCode = (int)HttpStatusCode.BadRequest, ErrorResponse = _errorFactory.ModelStateToErrorResponse(ModelState) });
+        }
+
+        [HttpPost]
+        [SwaggerOperation(Tags = new[] { "Identity - Domain" })]
+        public IActionResult AddUserToDomain(AddToDomainModelDTO addToDomainModel)
+        {
+            try
+            {
+                if (ModelState.IsValid)
+                {
+                    return Ok();
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"AddUserToDomain: {ex.Message}");
+                return BadRequest(new BasicResponse() { Message = $"{ex.Message}", StatusCode = (int)HttpStatusCode.BadRequest });
+            }
+            return BadRequest(new BasicResponse() { Message = $"", StatusCode = (int)HttpStatusCode.BadRequest, ErrorResponse = _errorFactory.ModelStateToErrorResponse(ModelState) });
+        }
         #endregion
 
         #endregion
