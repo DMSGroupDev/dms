@@ -16,6 +16,8 @@ using Serilog;
 using Serilog.Events;
 using System;
 using System.Collections.Generic;
+using System.IO;
+using System.Reflection;
 using System.Text;
 
 namespace dms_backend_api
@@ -23,7 +25,7 @@ namespace dms_backend_api
     public partial class Startup
     {
         readonly string MyAllowSpecificOrigins = "_myAllowSpecificOrigins";
-        public static IConfiguration? _configuration;
+        private static IConfiguration? _configuration;
 
         public Startup(IConfiguration configuration)
         {
@@ -51,7 +53,10 @@ namespace dms_backend_api
             services.AddSwaggerGen(c =>
             {
                 c.SwaggerDoc("v1", new() { Title = "dms_backend_api", Version = "v1" });
-                c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+                c.EnableAnnotations();
+                c.IncludeXmlComments(Path.Combine(AppContext.BaseDirectory, $"{Assembly.GetExecutingAssembly().GetName().Name}.xml"));
+     
+            c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
                 {
                     Description = @"JWT Authorization header using the Bearer scheme. \r\n\r\n 
                       Enter 'Bearer' [space] and then your token in the text input below.

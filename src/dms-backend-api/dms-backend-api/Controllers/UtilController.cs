@@ -12,6 +12,7 @@ namespace dms_backend_api.Controllers
 {
     [ApiController]
     [Route("/api/util/[action]")]
+    [Produces("application/json")]
     public partial class UtilController : Controller
     {
         #region Fields

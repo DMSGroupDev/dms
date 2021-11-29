@@ -7,6 +7,7 @@
         NotEnoughtLenght = 3,
         NotEqual = 4,
         NotFound = 5,
-        LockedOut = 6
+        LockedOut = 6,
+        AlreadyConfirmed = 7
     }
 }
