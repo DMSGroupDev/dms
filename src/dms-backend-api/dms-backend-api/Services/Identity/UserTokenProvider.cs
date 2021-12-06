@@ -29,13 +29,13 @@ namespace dms_backend_api.Services.Identity
             return Task.FromResult(false);
         }
 
-        private string GenerateToken(ApplicationUser user, string purpose)
+        private string GenerateToken(ApplicationUser user, string purpose, long? timestamp = null)
         {
             string secretString = (string)_configuration.GetValue(typeof(string), "JWTSecret");
             if (string.IsNullOrEmpty(secretString))
                 throw new InvalidOperationException("The JWT Secret is empty.");
 
-            return secretString + user.Email + purpose + user.Id + "|t=" + ConvertToTimestamp(DateTime.UtcNow);
+            return secretString + user.Email + purpose + user.Id + "|t=" + (timestamp == null ? ConvertToTimestamp(DateTime.UtcNow) : timestamp).ToString();
         }
 
         public Task<string> GenerateAsync(string purpose, UserManager<TUser> manager, TUser user)
@@ -45,32 +45,30 @@ namespace dms_backend_api.Services.Identity
 
         public Task<bool> ValidateAsync(string purpose, string token, UserManager<TUser> manager, TUser user)
         {
-            if (long.TryParse(token.Substring(token.IndexOf("|t=") + 4), out long parsedDate))
+            if (long.TryParse(token.Substring(token.IndexOf("|t=") + 3), out long parsedDate))
             {
-                DateTime date = UnixTimeStampToDateTime(parsedDate);
+                DateTime date = UnixTimestampToDateTime(parsedDate);
                 if (date > DateTime.UtcNow.AddHours(-24) && date <= DateTime.UtcNow)
-                    return Task.FromResult(token == GenerateToken(user, purpose));
+                    return Task.FromResult(token == GenerateToken(user, purpose, parsedDate));
             }
             return Task.FromResult(false);
         }
 
         #region Timestamps
-        
+
         internal static long ConvertToTimestamp(DateTime value)
         {
             TimeSpan elapsedTime = value - new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
             return (long)elapsedTime.TotalSeconds;
         }
 
-        internal static DateTime UnixTimeStampToDateTime(long unixTimeStamp)
+        internal static DateTime UnixTimestampToDateTime(long unixTime)
         {
-            DateTime dateTime = new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc);
-            dateTime = dateTime.AddSeconds(unixTimeStamp);
-            return dateTime;
+            return new DateTime(new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc).Ticks + (long)(unixTime * TimeSpan.TicksPerSecond), DateTimeKind.Utc);
         }
-        
+
         #endregion
-        
+
         #endregion
     }
 }
