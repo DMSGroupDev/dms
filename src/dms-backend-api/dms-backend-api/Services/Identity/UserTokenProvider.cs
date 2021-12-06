@@ -35,7 +35,7 @@ namespace dms_backend_api.Services.Identity
             if (string.IsNullOrEmpty(secretString))
                 throw new InvalidOperationException("The JWT Secret is empty.");
 
-            return secretString + user.Email + purpose + user.Id + "|?t=" + ConvertToTimestamp(DateTime.UtcNow);
+            return secretString + user.Email + purpose + user.Id + "|t=" + ConvertToTimestamp(DateTime.UtcNow);
         }
 
         public Task<string> GenerateAsync(string purpose, UserManager<TUser> manager, TUser user)
@@ -45,7 +45,7 @@ namespace dms_backend_api.Services.Identity
 
         public Task<bool> ValidateAsync(string purpose, string token, UserManager<TUser> manager, TUser user)
         {
-            if (long.TryParse(token.Substring(token.IndexOf("|?t=") + 4), out long parsedDate))
+            if (long.TryParse(token.Substring(token.IndexOf("|t=") + 4), out long parsedDate))
             {
                 DateTime date = UnixTimeStampToDateTime(parsedDate);
                 if (date > DateTime.UtcNow.AddHours(-24) && date <= DateTime.UtcNow)
