@@ -48,8 +48,7 @@ namespace dms_backend_api.Controllers
                                       IMapper mapper,
                                       IEmailSender emailSender,
                                       IErrorFactory errorFactory,
-                                      IUserTwoFactorTokenProvider<ApplicationUser> tokenProvider,
-                                       SignInManager<ApplicationUser> signInManager)
+                                      IUserTwoFactorTokenProvider<ApplicationUser> tokenProvider)
         {
             _logger = logger;
             _userManager = identityService.GetUserManager();
@@ -58,7 +57,7 @@ namespace dms_backend_api.Controllers
             _emailSender = emailSender;
             _errorFactory = errorFactory;
             _tokenProvider = tokenProvider;
-            _signInManager = signInManager;
+            _signInManager = identityService.GetSignInManager();
         }
 
         #endregion
