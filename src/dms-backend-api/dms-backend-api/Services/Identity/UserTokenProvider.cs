@@ -31,9 +31,9 @@ namespace dms_backend_api.Services.Identity
 
         private string GenerateToken(ApplicationUser user, string purpose, long? timestamp = null)
         {
-            string secretString = (string)_configuration.GetValue(typeof(string), "JWTSecret");
+            string secretString = (string)_configuration.GetValue(typeof(string), "saltToken");
             if (string.IsNullOrEmpty(secretString))
-                throw new InvalidOperationException("The JWT Secret is empty.");
+                throw new InvalidOperationException("The saltToken is empty.");
 
             return secretString + user.Email + purpose + user.Id + "|t=" + (timestamp == null ? ConvertToTimestamp(DateTime.UtcNow) : timestamp).ToString();
         }

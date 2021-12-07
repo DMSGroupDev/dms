@@ -19,6 +19,10 @@ namespace dms_backend_api.Helpers
             string? jwtValidIssuer = Environment.GetEnvironmentVariable("JWT_ValidIssuer");
             if (jwtValidIssuer is null)
                 throw new InvalidOperationException("Store the JWT ValidIssuer in a JWT_ValidIssuer environment variable.");
+
+            string? dbSchema = Environment.GetEnvironmentVariable("DB_SCHEMA");
+            if (dbSchema is null)
+                throw new InvalidOperationException("Store the Db schema in a DB_SCHEMA environment variable.");
         }
         #endregion
     }

@@ -33,6 +33,7 @@ namespace dms_backend_api.Controllers
         private readonly ILogger<IdentityController> _logger;
         private readonly RoleManager<ApplicationRole> _roleManager;
         private readonly UserManager<ApplicationUser> _userManager;
+        private readonly SignInManager<ApplicationUser> _signInManager;
         private readonly IMapper _mapper;
         private readonly IEmailSender _emailSender;
         private readonly IErrorFactory _errorFactory;
@@ -47,7 +48,8 @@ namespace dms_backend_api.Controllers
                                       IMapper mapper,
                                       IEmailSender emailSender,
                                       IErrorFactory errorFactory,
-                                      IUserTwoFactorTokenProvider<ApplicationUser> tokenProvider)
+                                      IUserTwoFactorTokenProvider<ApplicationUser> tokenProvider,
+                                       SignInManager<ApplicationUser> signInManager)
         {
             _logger = logger;
             _userManager = identityService.GetUserManager();
@@ -56,6 +58,7 @@ namespace dms_backend_api.Controllers
             _emailSender = emailSender;
             _errorFactory = errorFactory;
             _tokenProvider = tokenProvider;
+            _signInManager = signInManager;
         }
 
         #endregion
@@ -281,6 +284,27 @@ namespace dms_backend_api.Controllers
                             }
                         });
 
+                    var passwordCheck = await _signInManager.CheckPasswordSignInAsync(user, resetPasswordModel.Password, false);
+                    if (passwordCheck.Succeeded || passwordCheck.IsLockedOut)
+                    {
+                        return Ok(new BasicResponse()
+                        {
+                            Message = $"Password is already used.",
+                            StatusCode = (int)HttpStatusCode.NotFound,
+                            ErrorResponse = new ErrorResponse()
+                            {
+                                Errors = new List<ErrorModel> {
+                            new ErrorModel()
+                            {
+                                AttemptedValue = resetPasswordModel.Password,
+                                ErrorCode = (int) ErrorCodes.NotUnique,
+                                PropertyName = "Password",
+                                ErrorMessage = $"Password is already used."
+                            }
+                            }
+                            }
+                        });
+                    }
                     var result = await _userManager.ResetPasswordAsync(user, System.Text.Encoding.Default.GetString(WebEncoders.Base64UrlDecode(resetPasswordModel.Code)), resetPasswordModel.Password);
 
                     if (result.Succeeded)
