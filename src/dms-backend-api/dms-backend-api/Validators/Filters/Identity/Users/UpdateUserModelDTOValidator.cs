@@ -20,8 +20,8 @@ namespace dms_backend_api.ExternalModel.Identity.Users
 
             RuleFor(x => x.FirstName).NotEmpty().WithErrorCode(ErrorCodes.EmptyOrInvalid.ToString());
             RuleFor(x => x.LastName).NotEmpty().WithErrorCode(ErrorCodes.EmptyOrInvalid.ToString());
-            RuleFor(x => x.OldPassword).NotEmpty().WithErrorCode(ErrorCodes.EmptyOrInvalid.ToString()).Length(5, 100).WithErrorCode(ErrorCodes.NotEnoughtLenght.ToString());
-            RuleFor(x => x.Password).NotEmpty().WithErrorCode(ErrorCodes.EmptyOrInvalid.ToString()).Length(5, 100).WithErrorCode(ErrorCodes.NotEnoughtLenght.ToString());
+            RuleFor(x => x.OldPassword).NotEmpty().WithErrorCode(ErrorCodes.EmptyOrInvalid.ToString()).Length(8, 100).WithErrorCode(ErrorCodes.NotEnoughtLenght.ToString());
+            RuleFor(x => x.Password).NotEmpty().WithErrorCode(ErrorCodes.EmptyOrInvalid.ToString()).Length(8, 100).WithErrorCode(ErrorCodes.NotEnoughtLenght.ToString());
         }
     }
 }

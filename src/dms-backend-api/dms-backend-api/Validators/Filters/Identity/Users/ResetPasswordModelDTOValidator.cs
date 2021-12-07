@@ -9,7 +9,7 @@ namespace dms_backend_api.ExternalModel.Identity.Users
         {
             RuleFor(x => x.UserId).NotEmpty().WithErrorCode(ErrorCodes.EmptyOrInvalid.ToString());
             RuleFor(x => x.Code).NotEmpty().WithErrorCode(ErrorCodes.EmptyOrInvalid.ToString());
-            RuleFor(x => x.Password).NotEmpty().WithErrorCode(ErrorCodes.EmptyOrInvalid.ToString()).Length(5, 100).WithErrorCode(ErrorCodes.NotEnoughtLenght.ToString());
+            RuleFor(x => x.Password).NotEmpty().WithErrorCode(ErrorCodes.EmptyOrInvalid.ToString()).Length(8, 100).WithErrorCode(ErrorCodes.NotEnoughtLenght.ToString());
         }
     }
 }
