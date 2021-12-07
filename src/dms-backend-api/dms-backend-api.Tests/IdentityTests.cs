@@ -14,7 +14,7 @@ namespace dms_backend_api.Tests
     public class IdentityTests
     {
         [TestMethod]
-        public void GetAllProducts_ShouldReturnAllProducts()
+        public void EchoTest()
         {
             string testText = "Echo";
             var controller = new IdentityController(
@@ -23,8 +23,7 @@ namespace dms_backend_api.Tests
                 new Mock<IMapper>().Object,
                 new Mock<IEmailSender>().Object,
                 new Mock<IErrorFactory>().Object,
-                new Mock<IUserTwoFactorTokenProvider<ApplicationUser>>().Object,
-                new Mock<SignInManager<ApplicationUser>>().Object);
+                new Mock<IUserTwoFactorTokenProvider<ApplicationUser>>().Object);
 
             var result = controller.Echo();
             Assert.AreEqual(result, testText);
