@@ -281,7 +281,7 @@ namespace dms_backend_api.Controllers
                             }
                         });
 
-                    var result = await _userManager.ResetPasswordAsync(user, resetPasswordModel.Code, resetPasswordModel.Password);
+                    var result = await _userManager.ResetPasswordAsync(user, System.Text.Encoding.Default.GetString(WebEncoders.Base64UrlDecode(resetPasswordModel.Code)), resetPasswordModel.Password);
 
                     if (result.Succeeded)
                     {
