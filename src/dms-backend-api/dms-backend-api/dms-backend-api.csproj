@@ -67,6 +67,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
+		<Folder Include="Data\Migrations\" />
 		<Folder Include="Model\Utils\" />
 		<Folder Include="Validators\Attributes\" />
 	</ItemGroup>

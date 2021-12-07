@@ -23,7 +23,8 @@ namespace dms_backend_api.Tests
                 new Mock<IMapper>().Object,
                 new Mock<IEmailSender>().Object,
                 new Mock<IErrorFactory>().Object,
-                new Mock<IUserTwoFactorTokenProvider<ApplicationUser>>().Object);
+                new Mock<IUserTwoFactorTokenProvider<ApplicationUser>>().Object,
+                new Mock<SignInManager<ApplicationUser>>().Object);
 
             var result = controller.Echo();
             Assert.AreEqual(result, testText);
