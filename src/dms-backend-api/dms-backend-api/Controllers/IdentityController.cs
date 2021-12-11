@@ -422,39 +422,10 @@ namespace dms_backend_api.Controllers
             return BadRequest(new BasicResponse() { Message = $"", StatusCode = (int)HttpStatusCode.BadRequest, ErrorResponse = _errorFactory.ModelStateToErrorResponse(ModelState) });
         }
 
-        /* [HttpGet]
-         public async Task<IActionResult> DeleteUserUsernamedAsync(string username)
-         {
-             try
-             {
-
-                 var user = _userManager.Users.Where(x => x.UserName.Equals(username)).First();
-                 if (user != null)
-                 {
-                     var result = await _userManager.DeleteAsync(user);
-                     if (result.Succeeded)
-                     {
-                         return Ok(new BasicResponse() { Message = $"User sucessfully deleted:{ user.Id}", StatusCode = (int)HttpStatusCode.OK });
-                     }
-                     foreach (var error in result.Errors)
-                     {
-                         ModelState.AddModelError(string.Empty, error.Description);
-                     }
-                 }
-                 return NotFound(new BasicResponse() { Message = $"User with id:{username} was not found.", StatusCode = (int)HttpStatusCode.NotFound });
-
-             }
-             catch (Exception ex)
-             {
-                 _logger.LogError($"DeleteUserByIdAsync: {ex.Message}");
-                 return BadRequest(new BasicResponse() { Message = $"{ex.Message}", StatusCode = (int)HttpStatusCode.BadRequest });
-             }
-         }*/
-
         [Authorize]
         [HttpPost]
         [SwaggerOperation(Tags = new[] { "Identity - Users" })]
-        public async Task<IActionResult> UpdateUseryIdAsync([FromBody] UpdateUserModelDTO updateUserModel)
+        public async Task<IActionResult> UpdateUserByIdAsync([FromBody] UpdateUserModelDTO updateUserModel)
         {
             try
             {

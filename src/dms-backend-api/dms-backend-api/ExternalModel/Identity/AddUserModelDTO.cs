@@ -1,4 +1,6 @@
 ﻿
+using System;
+
 namespace dms_backend_api.ExternalModel.Identity
 {
     public partial class AddUserModelDTO
@@ -8,6 +10,7 @@ namespace dms_backend_api.ExternalModel.Identity
         public string LastName { get; set; } = null!;
         public string Email { get; set; } = null!;
         public string Password { get; set; } = null!;
+        public DateTime? CreatedOnUtc { get; set; } = DateTime.UtcNow;
 
     }
 }

@@ -4,6 +4,7 @@ using dms_backend_api.ExternalModel.Authenticate;
 using dms_backend_api.Factories;
 using dms_backend_api.Helpers;
 using dms_backend_api.Response;
+using dms_backend_api.Response.Authenticate;
 using dms_backend_api.Response.Identity;
 using dms_backend_api.Services.Identity;
 using Microsoft.AspNetCore.Authorization;
@@ -148,11 +149,23 @@ namespace dms_backend_api.Controllers
 #pragma warning disable CS8602 // Dereference of a possibly null reference.
                         if (_httpContextAccessor.HttpContext.User is not null)
                         {
+                            var token = _tokenService.GenerateToken(user, (await _userManager.GetRolesAsync(user)).ToList());
+
+                            _httpContextAccessor.HttpContext.Response.Cookies.Append(CookieJWTConst.CookieName,
+                                               token,
+                                               new Microsoft.AspNetCore.Http.CookieOptions()
+                                               {
+                                                   Path = "/",
+                                                   HttpOnly = true,
+                                                   Secure = false,
+                                                   Expires = DateTime.UtcNow.AddDays(1)
+                                               });
+
 #pragma warning restore CS8602 // Dereference of a possibly null reference.
                             return Ok(new LoginResponse()
                             {
                                 ApplicationUser = user,
-                                Token = _tokenService.GenerateToken(user, (await _userManager.GetRolesAsync(user)).ToList()),
+                                Token = token,
                                 Message = $"User sucessfully logged.",
                                 StatusCode = (int)HttpStatusCode.OK,
                                 ApplicationRoles = (await _userManager.GetRolesAsync(user)).ToList()
@@ -208,7 +221,7 @@ namespace dms_backend_api.Controllers
 
         [HttpGet]
         [Authorize]
-        [SwaggerResponse((int)HttpStatusCode.OK)]
+        [SwaggerResponse((int)HttpStatusCode.OK, Type = typeof(WhoAmIResponse))]
         public async Task<IActionResult> WhoAmIAsync()
         {
 #pragma warning disable CS8602 // Dereference of a possibly null reference.
@@ -216,8 +229,7 @@ namespace dms_backend_api.Controllers
             {
 #pragma warning restore CS8602 // Dereference of a possibly null reference.
                 var user = await _userManager.GetUserAsync(_httpContextAccessor.HttpContext.User);
-                (ApplicationUser user, List<string> roles) res = (user, (await _userManager.GetRolesAsync(user)).ToList());
-                return Ok(res);
+                return Ok(new WhoAmIResponse() { user = user, roles = (await _userManager.GetRolesAsync(user)).ToList() });
             }
             return NotFound();
         }
@@ -229,6 +241,19 @@ namespace dms_backend_api.Controllers
             try
             {
                 await _signInManager.SignOutAsync();
+
+                if (_httpContextAccessor.HttpContext is not null)
+                {
+                    _httpContextAccessor.HttpContext.Response.Cookies.Append(CookieJWTConst.CookieName,
+                                     "",
+                                     new Microsoft.AspNetCore.Http.CookieOptions()
+                                     {
+                                         Path = "/",
+                                         HttpOnly = true,
+                                         Secure = false,
+                                         Expires = DateTime.UtcNow.AddHours(-1)
+                                     });
+                }
                 return Ok(new BasicResponse() { Message = $"User logged out", StatusCode = (int)HttpStatusCode.OK });
             }
             catch (Exception ex)

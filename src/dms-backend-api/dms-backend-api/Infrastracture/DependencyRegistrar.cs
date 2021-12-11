@@ -7,6 +7,8 @@ using dms_backend_api.ExternalModel.Identity.Roles;
 using dms_backend_api.ExternalModel.Identity.Users;
 using dms_backend_api.ExternalModel.Util;
 using dms_backend_api.Factories;
+using dms_backend_api.Infrastracture.Jobs;
+using dms_backend_api.Infrastracture.Jobs.Internall;
 using dms_backend_api.Mapping;
 using dms_backend_api.Services;
 using dms_backend_api.Services.Identity;
@@ -45,9 +47,11 @@ namespace dms_backend_api.Infrastracture
 
             #region Identity
             services.AddSingleton<IUserTwoFactorTokenProvider<ApplicationUser>, UserTokenProvider<ApplicationUser>>();
+
             #endregion
 
             #region Utils
+
             var SendgridApiKey = (string)configuration.GetValue(typeof(string), "SendgridApiKey");
             if (string.IsNullOrEmpty(SendgridApiKey))
                 throw new InvalidOperationException("The SendgridApiKey is empty.");
@@ -90,6 +94,14 @@ namespace dms_backend_api.Infrastracture
             services.AddSingleton<ITokenService, TokenService>();
             services.AddScoped<IIdentityService, IdentityService>();
             services.AddSingleton<IEmailSender, SendgridService>();
+            #endregion
+
+            #region Jobs
+            if ((bool)configuration.GetValue(typeof(bool), "Hangfire_Active", false))
+            {
+                services.AddScoped<IRecurringStaticJobs, RecurringStaticJobs>();
+                services.AddScoped<IRemoveUncompletedRegistrationJob, RemoveUncompletedRegistrationJob>();
+            }
             #endregion
         }
     }

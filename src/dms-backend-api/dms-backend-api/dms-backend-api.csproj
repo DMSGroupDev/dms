@@ -33,6 +33,9 @@
 		<PackageReference Include="FluentValidation" Version="10.3.4" />
 		<PackageReference Include="FluentValidation.AspNetCore" Version="10.3.4" />
 		<PackageReference Include="FluentValidation.DependencyInjectionExtensions" Version="10.3.4" />
+		<PackageReference Include="Hangfire.AspNetCore" Version="1.7.27" />
+		<PackageReference Include="Hangfire.Core" Version="1.7.27" />
+		<PackageReference Include="Hangfire.PostgreSql" Version="1.8.5" />
 		<PackageReference Include="MicroElements.Swashbuckle.FluentValidation" Version="5.4.0" />
 		<PackageReference Include="Microsoft.AspNetCore.Authentication" Version="2.2.0" />
 		<PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="5.0.11" />

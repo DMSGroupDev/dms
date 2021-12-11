@@ -37,7 +37,7 @@ namespace dms_backend_api.Services.Identity
             {
                 Issuer = (string)_configuration.GetValue(typeof(string), "JWT_ValidIssuer"),
                 Audience = (string)_configuration.GetValue(typeof(string), "JWT_ValidAudience"),
-                Subject = new ClaimsIdentity(new[] { new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()), new Claim(ClaimTypes.Email, user.Email) }),
+                Subject = new ClaimsIdentity(new[] { new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()), new Claim(ClaimTypes.Email, user.Email) }, authenticationType: "basic"),
                 Expires = DateTime.UtcNow.AddHours(2),
                 Claims = authClaims,
                 SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(

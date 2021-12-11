@@ -9,5 +9,6 @@
             get => normalizedName;
             set => normalizedName = Name.ToUpper().Trim();
         }
+        public int Priority { get; set; }
     }
 }
