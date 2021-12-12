@@ -8,7 +8,7 @@ namespace dms_backend_api.Domain.Identity
     {
         public string FirstName { get; set; } = null!;
         public string LastName { get; set; } = null!;
-        public DateTime? CreatedOnUtc { get; set; } = null!;
+        public DateTime? CreatedOnUtc { get; set; } = DateTime.UtcNow;
 
     }
 }

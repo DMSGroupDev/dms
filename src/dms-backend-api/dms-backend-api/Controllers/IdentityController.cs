@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using dms_backend_api.Domain.Identity;
+using dms_backend_api.Domain.Identity.Domain;
 using dms_backend_api.ExternalModel.Identity;
 using dms_backend_api.Factories;
 using dms_backend_api.Helpers;
@@ -38,7 +39,7 @@ namespace dms_backend_api.Controllers
         private readonly IEmailSender _emailSender;
         private readonly IErrorFactory _errorFactory;
         private readonly IUserTwoFactorTokenProvider<ApplicationUser> _tokenProvider;
-
+        private readonly IIdentityService _identityService;
         #endregion
 
         #region Ctor
@@ -51,6 +52,7 @@ namespace dms_backend_api.Controllers
                                       IUserTwoFactorTokenProvider<ApplicationUser> tokenProvider)
         {
             _logger = logger;
+            _identityService = identityService;
             _userManager = identityService.GetUserManager();
             _roleManager = identityService.GetRoleManager();
             _mapper = mapper;
@@ -367,6 +369,50 @@ namespace dms_backend_api.Controllers
         }
 
         [Authorize]
+        [HttpPost]
+        [SwaggerOperation(Tags = new[] { "Identity - Users" })]
+        public async Task<IActionResult> AssignUserToRole([FromBody] AssignUserToRoleModelDTO assignUserToRoleModel)
+        {
+            try
+            {
+                if (ModelState.IsValid)
+                {
+                    var user = await _userManager.FindByIdAsync(assignUserToRoleModel.UserId.ToString());
+                    if (user is not null)
+                    {
+                        var role = await _roleManager.FindByIdAsync(assignUserToRoleModel.RoleId.ToString());
+                        if (role is not null)
+                        {
+                            var result = await _userManager.AddToRoleAsync(user, role.Name);
+                            if (result.Succeeded)
+                            {
+                                return Ok(new BasicResponse() { Message = $"User sucessfully :{user.Id} assigned to role: {role.Id}.", StatusCode = (int)HttpStatusCode.OK });
+                            }
+                            foreach (var error in result.Errors)
+                            {
+                                ModelState.AddModelError(string.Empty, error.Description);
+                            }
+                        }
+                        else
+                        {
+                            return NotFound(new BasicResponse() { Message = $"Role not found :{ assignUserToRoleModel.RoleId}", StatusCode = (int)HttpStatusCode.NotFound });
+                        }
+                    }
+                    else
+                    {
+                        return NotFound(new BasicResponse() { Message = $"User not found :{ assignUserToRoleModel.UserId}", StatusCode = (int)HttpStatusCode.NotFound });
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"AssignUserToRole: {ex.Message}");
+                return BadRequest(new BasicResponse() { Message = $"{ex.Message}", StatusCode = (int)HttpStatusCode.BadRequest });
+            }
+            return BadRequest(new BasicResponse() { Message = $"", StatusCode = (int)HttpStatusCode.ExpectationFailed });
+        }
+
+        [Authorize]
         [HttpGet]
         [SwaggerOperation(Tags = new[] { "Identity - Users" })]
         public IActionResult GetUserById(Guid Id)
@@ -375,9 +421,9 @@ namespace dms_backend_api.Controllers
             {
                 if (Id != Guid.Empty)
                 {
-                    var role = _userManager.Users.Where(x => x.Id.Equals(Id)).First();
-                    if (role is not null)
-                        return Ok(role);
+                    var user = _userManager.Users.Where(x => x.Id.Equals(Id)).First();
+                    if (user is not null)
+                        return Ok(user);
                     return NotFound(new BasicResponse() { Message = $"User with id:{Id} was not found.", StatusCode = (int)HttpStatusCode.NotFound });
                 }
             }
@@ -533,7 +579,7 @@ namespace dms_backend_api.Controllers
             return BadRequest(new BasicResponse() { Message = $"", StatusCode = (int)HttpStatusCode.BadRequest, ErrorResponse = _errorFactory.ModelStateToErrorResponse(ModelState) });
         }
 
-        [Authorize]
+        [Authorize(Roles = "Admin-DMS")]
         [HttpGet]
         [SwaggerOperation(Tags = new[] { "Identity - Roles" })]
         public IActionResult GetAllRoles()
@@ -647,14 +693,14 @@ namespace dms_backend_api.Controllers
 
         [HttpPost]
         [SwaggerOperation(Tags = new[] { "Identity - Domain" })]
-        public IActionResult ValidationRegisterDomainAsync(ValidateRegisterDomainModelDTO validateRegisterDomainModel)
+        public async Task<IActionResult> ValidationRegisterDomainAsync(ValidateRegisterDomainModelDTO validateRegisterDomainModel)
         {
             try
             {
                 if (ModelState.IsValid)
                 {
-                    /*Validation*/
-                    return Ok();
+                    if (await _identityService.ValidationRegisterDomainAsync(_mapper.Map<Domains>(validateRegisterDomainModel)))
+                        return Ok(new BasicResponse() { Message = $"", StatusCode = (int)HttpStatusCode.OK });
                 }
             }
             catch (Exception ex)
@@ -667,13 +713,23 @@ namespace dms_backend_api.Controllers
 
         [HttpPost]
         [SwaggerOperation(Tags = new[] { "Identity - Domain" })]
-        public IActionResult RegisterDomain(RegisterDomainModelDTO registerDomainModel)
+        public async Task<IActionResult> RegisterDomainAsync(RegisterDomainModelDTO registerDomainModel)
         {
             try
             {
                 if (ModelState.IsValid)
                 {
-                    return Ok();
+                    var result = await _identityService.RegisterDomainAsync(_mapper.Map<Domains>(registerDomainModel), registerDomainModel.OwnerId);
+                    if (result.Succeeded)
+                    {
+                        return Ok(new BasicResponse() { Message = $"", StatusCode = (int)HttpStatusCode.OK });
+                    }
+                    return BadRequest(new BasicResponse()
+                    {
+                        Message = $"",
+                        StatusCode = (int)HttpStatusCode.BadRequest,
+                        ErrorResponse = new ErrorResponse() { Errors = result.Errors.ToList() }
+                    });
                 }
             }
             catch (Exception ex)
@@ -692,7 +748,7 @@ namespace dms_backend_api.Controllers
             {
                 if (ModelState.IsValid)
                 {
-                    return Ok();
+                    return Ok(new BasicResponse() { Message = $"", StatusCode = (int)HttpStatusCode.OK });
                 }
             }
             catch (Exception ex)
@@ -705,13 +761,23 @@ namespace dms_backend_api.Controllers
 
         [HttpPost]
         [SwaggerOperation(Tags = new[] { "Identity - Domain" })]
-        public IActionResult AddUserToDomain(AddToDomainModelDTO addToDomainModel)
+        public async Task<IActionResult> AddUserToDomainAsync(AddToDomainModelDTO addToDomainModel)
         {
             try
             {
                 if (ModelState.IsValid)
                 {
-                    return Ok();
+                    var result = await _identityService.AddUserToDomainAsync(_mapper.Map<Domains>(addToDomainModel), addToDomainModel.Email);
+                    if (result.Succeeded)
+                    {
+                        return Ok(new BasicResponse() { Message = $"", StatusCode = (int)HttpStatusCode.OK });
+                    }
+                    return BadRequest(new BasicResponse()
+                    {
+                        Message = $"",
+                        StatusCode = (int)HttpStatusCode.BadRequest,
+                        ErrorResponse = new ErrorResponse() { Errors = result.Errors.ToList() }
+                    });
                 }
             }
             catch (Exception ex)

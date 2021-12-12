@@ -9,7 +9,7 @@ namespace dms_backend_api.Validators.Filters.Identity.Domain
         public RegisterDomainModelDTOValidator()
         {
             RuleFor(x => x.DomainName).NotEmpty().WithErrorCode(ErrorCodes.EmptyOrInvalid.ToString());
-            RuleFor(x => x.Email).NotEmpty().WithErrorCode(ErrorCodes.EmptyOrInvalid.ToString()).EmailAddress().WithErrorCode(ErrorCodes.EmptyOrInvalid.ToString());
+            RuleFor(x => x.OwnerId).NotEmpty().WithErrorCode(ErrorCodes.EmptyOrInvalid.ToString());
         }
     }
 }

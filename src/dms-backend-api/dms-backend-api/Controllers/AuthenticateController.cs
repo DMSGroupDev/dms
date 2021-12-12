@@ -64,7 +64,7 @@ namespace dms_backend_api.Controllers
         #region Methods
         [HttpPost]
         [AllowAnonymous]
-        public IActionResult UserValidation([FromBody] UserValidationModelDTO userValidationModel)
+        public IActionResult UserValidation([FromBody] UserValidationModelDTO _)
         {
             try
             {

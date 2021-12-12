@@ -1,6 +1,7 @@
 ﻿
 using AutoMapper;
 using dms_backend_api.Domain.Identity;
+using dms_backend_api.Domain.Identity.Domain;
 using dms_backend_api.ExternalModel.Authenticate;
 using dms_backend_api.ExternalModel.Identity;
 
@@ -18,7 +19,10 @@ namespace dms_backend_api.Mapping
             CreateMap<RegisterUserModelDTO, ApplicationUser>();
             CreateMap<UpdateUserModelDTO, ApplicationUser>();
             CreateMap<AddUserModelDTO, ApplicationUser>();
-
+            CreateMap<ValidateRegisterDomainModelDTO, Domains>();
+            CreateMap<RegisterDomainModelDTO, Domains>();
+            CreateMap<InviteToDomainModelDTO, Domains>();
+            CreateMap<AddToDomainModelDTO, Domains>();
             #endregion
 
             #region Roles

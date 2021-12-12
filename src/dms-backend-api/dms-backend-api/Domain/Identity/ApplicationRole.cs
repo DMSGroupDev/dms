@@ -6,7 +6,7 @@ namespace dms_backend_api.Domain.Identity
 {
     public partial class ApplicationRole : IdentityRole<Guid>
     {
-        public DateTime? CreatedOnUtc { get; set; } = null!;
+        public DateTime? CreatedOnUtc { get; set; } = DateTime.UtcNow;
         public int Priority { get; set; }
     }
 }

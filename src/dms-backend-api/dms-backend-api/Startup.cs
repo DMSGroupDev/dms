@@ -66,7 +66,7 @@ namespace dms_backend_api
             #region SwaggerDocumentation
             services.AddSwaggerGen(c =>
             {
-                c.SwaggerDoc("v1", new() { Title = "dms_backend_api", Version = "v1", Description = $"<a href=\"/jobs\">Hangfire jobs</a>" });
+                c.SwaggerDoc("v1", new() { Title = "dms_backend_api", Version = "v1", Description = (bool)_configuration.GetValue(typeof(bool), "Hangfire_Active", false) ? $"<a href=\"/jobs\">Hangfire jobs</a>" : "" });
                 c.EnableAnnotations();
                 c.IncludeXmlComments(Path.Combine(AppContext.BaseDirectory, $"{Assembly.GetExecutingAssembly().GetName().Name}.xml"));
 
