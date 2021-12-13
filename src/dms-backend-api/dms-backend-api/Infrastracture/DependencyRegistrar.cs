@@ -97,7 +97,7 @@ namespace dms_backend_api.Infrastracture
             #endregion
 
             #region Jobs
-            if ((bool)configuration.GetValue(typeof(bool), "Hangfire_Active", false))
+            if ((bool)configuration.GetValue(typeof(bool), "Hangfire:Hangfire_Active", false))
             {
                 services.AddScoped<IRecurringStaticJobs, RecurringStaticJobs>();
                 services.AddScoped<IRemoveUncompletedRegistrationJob, RemoveUncompletedRegistrationJob>();

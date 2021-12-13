@@ -66,7 +66,7 @@ namespace dms_backend_api
             #region SwaggerDocumentation
             services.AddSwaggerGen(c =>
             {
-                c.SwaggerDoc("v1", new() { Title = "dms_backend_api", Version = "v1", Description = (bool)_configuration.GetValue(typeof(bool), "Hangfire_Active", false) ? $"<a href=\"/jobs\">Hangfire jobs</a>" : "" });
+                c.SwaggerDoc("v1", new() { Title = "dms_backend_api", Version = "v1", Description = (bool)_configuration.GetValue(typeof(bool), "Hangfire:Hangfire_Active", false) ? $"<a href=\"/jobs\">Hangfire jobs</a>" : "" });
                 c.EnableAnnotations();
                 c.IncludeXmlComments(Path.Combine(AppContext.BaseDirectory, $"{Assembly.GetExecutingAssembly().GetName().Name}.xml"));
 
@@ -138,16 +138,16 @@ namespace dms_backend_api
             #endregion
 
             #region Hangfire
-            if ((bool)_configuration.GetValue(typeof(bool), "Hangfire_Active", false))
+            if ((bool)_configuration.GetValue(typeof(bool), "Hangfire:Hangfire_Active", false))
             {
                 services.AddHangfireServer(options =>
                 {
-                    options.WorkerCount = 1;
+                    options.WorkerCount = (int)_configuration.GetValue(typeof(int), "Hangfire:Worker_Count", 1);
                 });
 
                 var sbSql = new NpgsqlConnectionStringBuilder($"User ID={ConnProp.User};Password={ConnProp.Password};Host={ConnProp.Hostname};Port={ConnProp.Port};Database={ConnProp.DatabaseName}")
                 {
-                    Pooling = false
+                    Pooling = (bool)_configuration.GetValue(typeof(bool), "Hangfire:Pooling", false)
                 };
 
                 services.AddHangfire(config => config.SetDataCompatibilityLevel(CompatibilityLevel.Version_170)
@@ -199,7 +199,7 @@ namespace dms_backend_api
             });
 
             #region Hangfire
-            if ((bool)_configuration.GetValue(typeof(bool), "Hangfire_Active", false))
+            if ((bool)_configuration.GetValue(typeof(bool), "Hangfire:Hangfire_Active", false))
             {
                 var recuringStaticJobs = serviceProvider.GetService<IRecurringStaticJobs>();
                 if (recuringStaticJobs is not null)
